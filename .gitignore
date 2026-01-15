@@ -1,0 +1,8 @@
+/.cursor
+/.env
+/.vscode
+/api.txt
+/instructions.txt
+/run_daily.bat
+/run_daily.ps1
+/__pycache__

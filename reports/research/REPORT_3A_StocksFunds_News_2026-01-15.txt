@@ -1,0 +1,64 @@
+Okay, I will start by gathering the latest news and information for the specified stocks and funds. I will use web search to find relevant articles, announcements, and financial data. Then, I will synthesize the information and generate the report in the specified format.
+
+## REPORT METADATA
+- Report Date: 2026-01-15
+- Agent Type: Stocks & Funds News Agent
+- Report Period: 2026-01-08 to 2026-01-15
+- Generation Timestamp: 2026-01-15 13:00:47
+
+## 1. EXECUTIVE SUMMARY
+- ASML's market value surpassed $500 billion following strong forecasts from TSMC. The company is scheduled to release its Q4 2025 and full-year financial results on January 28, 2026.
+- Turkey's economic growth is projected to be moderate in 2025, with gradual disinflation expected. Several institutions have provided slightly differing forecasts.
+- Earnings report dates for THYAO, TUPRS, ENJSA, ASELS, and BIMAS are scheduled for late February and early March 2026.
+- SPUS and HLAL are Shariah-compliant ETFs, adhering to Islamic ethical principles. SPUS is heavily concentrated in technology stocks.
+- The US economic outlook anticipates GDP growth above 2% in 2026, driven by capital investment, particularly in AI.
+
+## 2. MARKET & MACRO BACKDROP
+| Factor | Latest Status | Impacted Assets | Currency Exposure | Source | Date |
+|--------|---------------|-----------------|-------------------|--------|------|
+| Turkey GDP Growth | 3.1% - 3.6% projected | THYAO, TUPRS, ENJSA, ASELS, BIMAS | TRY | | Dec 2025/Mar 2025 |
+| Turkey Inflation | 18% projected by end of 2026 | THYAO, TUPRS, ENJSA, ASELS, BIMAS | TRY | | Dec 2025 |
+| US GDP Growth | Above 2% projected | ASML, SPUS, HLAL | USD | | Jan 2026 |
+| US Unemployment | Around 4.2% projected by end of 2026 | ASML, SPUS, HLAL | USD | | Jan 2026 |
+| US Inflation | Core CPI at 2.6% in December 2025 | ASML, SPUS, HLAL | USD | | Jan 2026 |
+
+## 3. CURRENT STOCKS — TOP NEWS
+| Ticker | Currency Exposure | Headline | What happened | Expected impact | Source | Date |
+|--------|-------------------|----------|---------------|-----------------|--------|------|
+| ASML | EUR/USD | ASML Market Value Exceeds $500 Billion | Share price rose 7.6% following strong forecasts from TSMC, driven by the AI boom. | Positive impact on investor confidence; confirms growth in semiconductor sector. | | 2026-01-15 |
+| ASML | EUR/USD | ASML to Release Q4 2025 Earnings | Company to release earnings on January 28, 2026, with outlook for 2026. | Investors will be looking for insights into the company's performance and future prospects. | | 2026-01-15 |
+| THYAO | TRY | Next Earnings Report on March 3, 2026 |  THYAO will release its next earnings report on March 3, 2026. | Investors will be looking for insights into the company's financial performance. | | 2026-01-15 |
+| TUPRS | TRY | Next Earnings Report on Feb 17/18, 2026 | Tupras will release its next earnings report around February 17/18, 2026. | Investors will be looking for insights into the company's financial performance. | | 2026-01-15 |
+| ENJSA | TRY | Next Earnings Report on March 8, 2026 | Enerjisa Enerji will release its next earnings report on March 8, 2026. | Investors will be looking for insights into the company's financial performance. | | 2026-01-15 |
+| ASELS | TRY | Next Earnings Report on March 2, 2026 | Aselsan will release its next earnings report on March 2, 2026. | Investors will be looking for insights into the company's financial performance. | | 2026-01-15 |
+| BIMAS | TRY | Next Earnings Report on March 10/11, 2026 | BIM Magazalar will release its next earnings report around March 10/11, 2026. | Investors will be looking for insights into the company's financial performance. | | 2026-01-15 |
+
+## 4. CURRENT FUNDS — TOP NEWS
+| Fund | Currency Exposure | Event | What changed | Expected impact | Source | Date |
+|------|-------------------|-------|---------------|-----------------|--------|------|
+| SPUS | USD | Shariah Compliance | SPUS is a Shariah-compliant ETF that tracks the S&P 500 Sharia Industry Exclusions Index. | Provides investors with exposure to Shariah-compliant stocks. | | 2026-01-15 |
+| SPUS | USD | Tech Concentration | SPUS is heavily concentrated in technology stocks, with a significant portion allocated to the "Magnificent Seven". | Higher risk and growth potential due to sector concentration. | | 2026-01-15 |
+| HLAL | USD | Shariah Compliance | HLAL is a Shariah-compliant ETF. | Provides investors with exposure to US Shariah-compliant stocks. | | 2026-01-15 |
+
+## 5. UPCOMING WATCHLIST
+| Event | Asset | Currency Exposure | Date | Why it matters |
+|-------|-------|-------------------|------|---------------|
+| ASML Earnings Release | ASML | EUR/USD | 2026-01-28 | Provides insights into company performance and outlook for the semiconductor industry. |
+| THYAO Earnings Release | THYAO | TRY | 2026-03-03 | Provides insights into the company's financial health and operational performance. |
+| TUPRS Earnings Release | TUPRS | TRY | 2026-02-17/18 | Provides insights into the company's financial health and refining margins. |
+| ENJSA Earnings Release | ENJSA | TRY | 2026-03-08 | Provides insights into the company's financial health and performance in the energy sector. |
+| ASELS Earnings Release | ASELS | TRY | 2026-03-02 | Provides insights into the company's financial health and performance in the defense industry. |
+| BIMAS Earnings Release | BIMAS | TRY | 2026-03-10/11 | Provides insights into the company's financial health and retail performance. |
+
+## 6. RISK REGISTER
+| Risk | Affected Assets | Currency | Severity |
+|------|-----------------|----------|----------|
+| TRY Volatility | THYAO, TUPRS, ENJSA, ASELS, BIMAS | TRY | Med |
+| Global Economic Slowdown | ASML, THYAO, TUPRS, ENJSA, ASELS, BIMAS, HLAL, SPUS | USD/EUR/TRY | Med |
+| Geopolitical Tensions | THYAO, TUPRS, ASELS | TRY | Med |
+| Sector Concentration (Tech) | SPUS | USD | Med |
+| US Tariff Policy | ASML, SPUS, HLAL | USD | Low |
+
+---
+
+CRITICAL: After generating the report content, I am now saving it to a file named `REPORT_3A_StocksFunds_News_2026-01-15.txt` in the current working directory. The file will be saved in UTF-8 encoding and will follow the exact structure above.

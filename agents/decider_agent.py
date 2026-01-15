@@ -1,0 +1,368 @@
+"""
+Decider Agent
+=============
+Final decision-making agent that synthesizes all research and discussion outputs
+into actionable investment guidance using self-iteration for refinement.
+"""
+
+import os
+import sys
+from google import genai
+from google.genai import types
+from datetime import datetime
+from typing import Optional
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config import (
+    GEMINI_API_KEY,
+    PROMPTS_DIR,
+    DECIDER_MODEL,
+    DECIDER_TEMPERATURE,
+    DECIDER_MAX_TOKENS,
+    DECIDER_PROMPT,
+    DECIDER_REPORT_NAME,
+    DECIDER_SELF_ITERATIONS,
+    FINAL_REPORTS_DIR,
+    VERBOSE,
+)
+from agents.base_agent import BaseAgent
+
+
+class DeciderAgent(BaseAgent):
+    """
+    Final decision-making agent that uses self-iteration to produce
+    refined, actionable investment guidance.
+    """
+
+    def __init__(self, self_iterations: Optional[int] = None):
+        """
+        Initialize the decider agent.
+
+        Args:
+            self_iterations: Number of self-iteration cycles (defaults to config value)
+        """
+        super().__init__(
+            agent_id="Decider",
+            prompt_file=DECIDER_PROMPT,
+            model_name=DECIDER_MODEL,
+            temperature=DECIDER_TEMPERATURE,
+            max_tokens=DECIDER_MAX_TOKENS,
+        )
+
+        self.self_iterations = self_iterations or DECIDER_SELF_ITERATIONS
+
+        if VERBOSE:
+            print(f"[{self.agent_id}] Thinking model configured: {self.model_name}")
+
+    def _build_input_context(
+        self,
+        research_reports: dict[str, str],
+        discussion_outputs: dict[str, str],
+    ) -> str:
+        """
+        Build the complete input context from research and discussion outputs.
+
+        Args:
+            research_reports: Dictionary mapping report ID to content
+            discussion_outputs: Dictionary mapping discussion ID to content
+
+        Returns:
+            Formatted input context string
+        """
+        sections = []
+
+        # Research Reports Section
+        sections.append("=" * 80)
+        sections.append("SECTION A: RESEARCH REPORTS (9 REPORTS)")
+        sections.append("=" * 80)
+
+        # Group by asset class
+        real_estate_reports = {k: v for k, v in research_reports.items() if k.startswith("1")}
+        metals_reports = {k: v for k, v in research_reports.items() if k.startswith("2")}
+        stocks_reports = {k: v for k, v in research_reports.items() if k.startswith("3")}
+
+        # Real Estate
+        sections.append("\n### REAL ESTATE RESEARCH ###\n")
+        for report_id, content in real_estate_reports.items():
+            sections.append(f"\n--- Report {report_id} ---\n")
+            sections.append(content)
+
+        # Gold & Silver
+        sections.append("\n### GOLD & SILVER RESEARCH ###\n")
+        for report_id, content in metals_reports.items():
+            sections.append(f"\n--- Report {report_id} ---\n")
+            sections.append(content)
+
+        # Stocks & Funds
+        sections.append("\n### STOCKS & FUNDS RESEARCH ###\n")
+        for report_id, content in stocks_reports.items():
+            sections.append(f"\n--- Report {report_id} ---\n")
+            sections.append(content)
+
+        # Discussion Outputs Section
+        sections.append("\n" + "=" * 80)
+        sections.append("SECTION B: DISCUSSION AGENT OUTPUTS (3 PERSPECTIVES)")
+        sections.append("=" * 80)
+
+        perspective_names = {
+            "gold_silver": "Gold & Silver–Favored Perspective",
+            "real_estate": "Real Estate–Favored Perspective",
+            "stocks_funds": "Stocks & Funds–Favored Perspective",
+        }
+
+        for disc_id, content in discussion_outputs.items():
+            perspective = perspective_names.get(disc_id, disc_id)
+            sections.append(f"\n### {perspective} ###\n")
+            sections.append(content)
+
+        return "\n".join(sections)
+
+    def _generate_iteration(
+        self,
+        input_context: str,
+        iteration_num: int,
+        previous_output: Optional[str] = None,
+    ) -> str:
+        """
+        Generate a single self-iteration output.
+
+        Args:
+            input_context: The complete input context
+            iteration_num: Current iteration number (1-based)
+            previous_output: Output from previous iteration (if any)
+
+        Returns:
+            Generated output for this iteration
+        """
+        current_date = self.get_current_date()
+        timestamp = self.get_timestamp()
+
+        if iteration_num == 1:
+            # First iteration: Initial synthesis
+            iteration_prompt = f"""
+{self.system_prompt}
+
+────────────────────────────────
+SELF-ITERATION: {iteration_num} of {self.self_iterations} (INITIAL SYNTHESIS)
+────────────────────────────────
+
+CURRENT DATE: {current_date}
+TIMESTAMP: {timestamp}
+
+{input_context}
+
+────────────────────────────────
+TASK: INITIAL SYNTHESIS
+────────────────────────────────
+
+This is your FIRST iteration. Your task:
+1. Read ALL 12 inputs thoroughly
+2. Identify key themes, agreements, and conflicts
+3. Generate your INITIAL recommendations following the OUTPUT TEMPLATE
+
+Note: You will have {self.self_iterations - 1} more iteration(s) to refine this output.
+
+GENERATE YOUR INITIAL SYNTHESIS NOW:
+"""
+        elif iteration_num == self.self_iterations:
+            # Final iteration: Final refinement
+            iteration_prompt = f"""
+{self.system_prompt}
+
+────────────────────────────────
+SELF-ITERATION: {iteration_num} of {self.self_iterations} (FINAL REFINEMENT)
+────────────────────────────────
+
+CURRENT DATE: {current_date}
+TIMESTAMP: {timestamp}
+
+YOUR PREVIOUS OUTPUT:
+{previous_output}
+
+────────────────────────────────
+TASK: FINAL REFINEMENT
+────────────────────────────────
+
+This is your FINAL iteration. Your task:
+1. Review your previous output critically
+2. Integrate any remaining improvements
+3. Ensure the output is clear, actionable, and complete
+4. Verify all sections of the OUTPUT TEMPLATE are filled
+5. Add your self-iteration notes at the end
+
+Set "Self-Iterations Completed" to: {self.self_iterations}
+
+GENERATE YOUR FINAL OUTPUT NOW:
+"""
+        else:
+            # Middle iteration: Critical review
+            iteration_prompt = f"""
+{self.system_prompt}
+
+────────────────────────────────
+SELF-ITERATION: {iteration_num} of {self.self_iterations} (CRITICAL REVIEW)
+────────────────────────────────
+
+CURRENT DATE: {current_date}
+TIMESTAMP: {timestamp}
+
+YOUR PREVIOUS OUTPUT:
+{previous_output}
+
+ORIGINAL INPUT CONTEXT:
+{input_context}
+
+────────────────────────────────
+TASK: CRITICAL REVIEW
+────────────────────────────────
+
+This is iteration {iteration_num}. Your task:
+1. Challenge your previous recommendations
+2. Look for blind spots or biases
+3. Ensure all asset classes are fairly represented
+4. Check if any important information was missed
+5. Refine and improve your output
+
+GENERATE YOUR REFINED OUTPUT NOW:
+"""
+
+        if VERBOSE:
+            print(f"[{self.agent_id}] Running self-iteration {iteration_num}/{self.self_iterations}...")
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=iteration_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=self.temperature,
+                    max_output_tokens=self.max_tokens,
+                )
+            )
+            return response.text
+
+        except Exception as e:
+            error_msg = f"[{self.agent_id}] Error in iteration {iteration_num}: {str(e)}"
+            print(error_msg)
+            raise
+
+    def generate_decision(
+        self,
+        research_reports: dict[str, str],
+        discussion_outputs: dict[str, str],
+    ) -> str:
+        """
+        Generate the final investment decision through self-iteration.
+
+        Args:
+            research_reports: Dictionary mapping report ID to content
+            discussion_outputs: Dictionary mapping discussion ID to content
+
+        Returns:
+            Final decision output
+        """
+        if VERBOSE:
+            print(f"\n[{self.agent_id}] Starting decision process with {self.self_iterations} self-iterations...")
+
+        # Build input context
+        input_context = self._build_input_context(research_reports, discussion_outputs)
+
+        # Run self-iterations
+        current_output = None
+
+        for iteration in range(1, self.self_iterations + 1):
+            current_output = self._generate_iteration(
+                input_context=input_context,
+                iteration_num=iteration,
+                previous_output=current_output,
+            )
+
+            if VERBOSE:
+                print(f"[{self.agent_id}] Completed self-iteration {iteration}/{self.self_iterations}")
+
+        if VERBOSE:
+            print(f"[{self.agent_id}] Decision generation complete.")
+
+        return current_output
+
+    def save_decision(
+        self,
+        content: str,
+        output_dir: Optional[str] = None,
+    ) -> str:
+        """
+        Save the final decision to a file.
+
+        Args:
+            content: Decision content to save
+            output_dir: Directory to save to
+
+        Returns:
+            Path to the saved decision file
+        """
+        if output_dir is None:
+            output_dir = FINAL_REPORTS_DIR
+
+        # Ensure directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Generate filename
+        current_date = self.get_current_date()
+        filename = DECIDER_REPORT_NAME.format(date=current_date)
+        filepath = os.path.join(output_dir, filename)
+
+        # Save the decision
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        if VERBOSE:
+            print(f"[{self.agent_id}] Decision saved to: {filepath}")
+
+        return filepath
+
+    def run(
+        self,
+        research_reports: dict[str, str],
+        discussion_outputs: dict[str, str],
+        output_dir: Optional[str] = None,
+    ) -> tuple[str, str]:
+        """
+        Execute the full decision workflow: generate and save.
+
+        Args:
+            research_reports: Dictionary mapping report ID to content
+            discussion_outputs: Dictionary mapping discussion ID to content
+            output_dir: Optional output directory override
+
+        Returns:
+            Tuple of (decision_content, filepath)
+        """
+        content = self.generate_decision(research_reports, discussion_outputs)
+        filepath = self.save_decision(content, output_dir)
+        return content, filepath
+
+
+if __name__ == "__main__":
+    # Test with mock data
+    mock_research = {
+        "1A": "Mock Real Estate News",
+        "1B": "Mock Real Estate Fundamental",
+        "1C": "Mock Real Estate Sentiment",
+        "2A": "Mock Gold News",
+        "2B": "Mock Gold Fundamental",
+        "2C": "Mock Gold Sentiment",
+        "3A": "Mock Stocks News",
+        "3B": "Mock Stocks Fundamental",
+        "3C": "Mock Stocks Sentiment",
+    }
+
+    mock_discussions = {
+        "gold_silver": "Mock Gold Discussion",
+        "real_estate": "Mock Real Estate Discussion",
+        "stocks_funds": "Mock Stocks Discussion",
+    }
+
+    agent = DeciderAgent(self_iterations=2)
+    content, filepath = agent.run(mock_research, mock_discussions)
+    print(f"\nDecision saved to: {filepath}")
