@@ -7,6 +7,14 @@ reports/
 # Portfolio data (contains personal financial information)
 portfolio/
 
+# Tracking data (price history, evaluation logs, plots)
+tracking/price_history.txt
+tracking/evaluation_log.csv
+tracking/advisory_actions_log.json
+tracking/real_estate_price_cache.json
+tracking/latest_prices.json
+tracking/plots/
+
 # Environment and IDE
 .env
 __pycache__/
@@ -14,3 +22,5 @@ __pycache__/
 .vscode/
 .cursor/
 last_run.txt
+last_price_update.txt
+api.txt
