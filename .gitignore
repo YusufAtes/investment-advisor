@@ -1,8 +1,16 @@
-/.cursor
-/.env
-/.vscode
-/api.txt
-/instructions.txt
-/run_daily.bat
-/run_daily.ps1
-/__pycache__
+# Logs
+logs/
+
+# Reports
+reports/
+
+# Portfolio data (contains personal financial information)
+portfolio/
+
+# Environment and IDE
+.env
+__pycache__/
+*.pyc
+.vscode/
+.cursor/
+last_run.txt

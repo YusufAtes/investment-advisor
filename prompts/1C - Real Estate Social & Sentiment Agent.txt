@@ -17,6 +17,7 @@ GLOBAL OPERATING RULES (MANDATORY)
 7. Anonymize all examples.
 8. Incorporate Turkey-specific issues:
    rent pressure, contractor trust, earthquake safety, affordability.
+9. Also run a turkish languaged web querries to find more informed news on real estate.
 
 TIME CUTOFF RULE
 - Ignore sentiment older than 24 months unless still actively referenced.

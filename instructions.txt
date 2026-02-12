@@ -1,0 +1,190 @@
+================================================================================
+                    PROJECT INSTRUCTIONS FOR AI ASSISTANT
+================================================================================
+
+PROJECT NAME: Investment Advisor Multi-Agent System
+LANGUAGE: Python 3.10+
+API: Google Gemini API (google-genai SDK)
+
+================================================================================
+1. PROJECT AIM
+================================================================================
+
+This is a multi-agent investment advisory system designed to:
+
+- Gather real-time market data across THREE asset classes:
+  * Real Estate (Turkey-focused)
+  * Gold & Silver (Precious Metals)
+  * Stocks & Funds (Global, Shariah-compliant focus)
+
+- Process information through a structured pipeline:
+  RESEARCH (9 agents) -> DISCUSSION (3 agents) -> DECISION (1 agent) -> EMAIL
+
+- Deliver daily investment guidance via email that is:
+  * Actionable and concise
+  * Halal-compliant (Islamic finance constraints)
+  * No-Israel verified (ethical investment constraint)
+  * Currency-aware (TRY/USD/EUR exposure management)
+  * Turkey-specific risk aware
+
+The system runs once daily and produces a final advisory report sent to the user.
+
+================================================================================
+2. PROJECT STRUCTURE
+================================================================================
+
+investment-advisor/
+├── main.py                 # Main orchestrator - runs the full pipeline
+├── config.py               # All configurable parameters (API keys, models, paths)
+├── requirements.txt        # Python dependencies
+├── .env                    # Environment variables (API keys, email credentials)
+│
+├── agents/                 # Agent implementations
+│   ├── base_agent.py       # Base class for all agents
+│   ├── research_agent.py   # 9 research agents with web search
+│   ├── discussion_agent.py # 3 discussion agents (iterative)
+│   └── decider_agent.py    # Final decision agent (self-iterating)
+│
+├── prompts/                # AGENT PROMPTS (see section 3)
+│   ├── 1A - Real Estate News Agent.txt
+│   ├── 1B - Real Estate Market & Fundamental Agent.txt
+│   ├── 1C - Real Estate Social & Sentiment Agent.txt
+│   ├── 2A - Gold & Silver News Agent.txt
+│   ├── 2B - Gold & Silver Market & Fundamental Agent.txt
+│   ├── 2C - Gold & Silver Social & Sentiment Agent.txt
+│   ├── 3A - Stocks & Funds News Agent.txt
+│   ├── 3B - Stocks & Funds Market & Fundamental Agent.txt
+│   ├── 3C - Stocks & Funds Social & Sentiment Agent.txt
+│   ├── Discussion Agent 1.txt    # Gold/Silver favored
+│   ├── Discussion Agent 2.txt    # Real Estate favored
+│   ├── Discussion Agent 3.txt    # Stocks/Funds favored
+│   └── Decider Agent.txt         # Final decision maker
+│
+├── utils/                  # Utility modules
+│   ├── file_handler.py     # File read/write operations
+│   └── email_sender.py     # Gmail SMTP email delivery
+│
+└── reports/                # Generated reports (output)
+    ├── research/           # 9 research reports per run
+    ├── discussion/         # Discussion outputs per iteration
+    │   ├── iteration_1/
+    │   ├── iteration_2/
+    │   └── iteration_3/
+    └── final/              # Final decision reports
+
+================================================================================
+3. PROMPT FILES (CRITICAL)
+================================================================================
+
+The .txt files in the prompts/ folder are NOT documentation.
+They are AGENT PROMPTS fed directly to the Gemini API.
+
+Each prompt defines:
+- The agent's role and responsibilities
+- Operating rules and constraints
+- Output format/template
+- Specific focus areas
+
+RESEARCH AGENTS (9 total):
+- 1A, 1B, 1C: Real Estate focus
+- 2A, 2B, 2C: Gold & Silver focus
+- 3A, 3B, 3C: Stocks & Funds focus
+- Each has sub-focus: News (A), Fundamentals (B), Sentiment (C)
+
+DISCUSSION AGENTS (3 total):
+- Each favors one asset class
+- Iteratively refine analysis (3 iterations default)
+- Use research reports + previous discussion outputs
+
+DECIDER AGENT (1):
+- Synthesizes all 12 inputs (9 research + 3 discussion)
+- Self-iterates 3 times for quality
+- Produces final actionable summary
+
+================================================================================
+4. DEVELOPMENT GUIDELINES
+================================================================================
+
+When assisting with this project, you MUST:
+
+A) STAY ALIGNED WITH PROJECT AIM
+   - All changes should serve the investment advisory purpose
+   - Maintain the multi-agent architecture
+   - Preserve the daily email delivery workflow
+   - Keep outputs actionable and user-focused
+
+B) RESPECT CONSTRAINTS
+   - Halal compliance must be verified/tracked
+   - No-Israel verification must be maintained
+   - Currency exposure (TRY/USD/EUR) must be addressed
+   - Turkey-specific risks must be considered
+
+C) MAINTAIN CODE CONSISTENCY
+   - Follow existing patterns in agents/, utils/
+   - Use config.py for all configurable values
+   - Use file_handler.py for file operations
+   - Maintain error handling and retry logic
+
+D) PRESERVE PIPELINE INTEGRITY
+   - Research -> Discussion -> Decision flow must be maintained
+   - In-memory data passing for full pipeline runs
+   - Date-based filtering for partial runs
+   - Reports saved with proper naming conventions
+
+================================================================================
+5. KEY TECHNICAL DETAILS
+================================================================================
+
+API CONFIGURATION:
+- Model: gemini-2.0-flash (research, discussion, decider)
+- Web search: Google Search grounding enabled for research agents
+- Rate limiting: 10s delay between agents, retry with backoff
+
+PIPELINE EXECUTION:
+- Full run: python main.py
+- Skip email: python main.py --skip-email
+- Research only: python main.py --research-only
+- Discussion only: python main.py --discussion-only
+- Decider only: python main.py --decider-only --iteration 3
+
+DATA FLOW:
+- Full pipeline: ALL data passed in-memory (fresh)
+- Partial runs: Load from disk using TODAY's date filter
+- Reports named: REPORT_XX_Type_YYYY-MM-DD.txt
+
+EMAIL DELIVERY:
+- Gmail SMTP (smtp.gmail.com:587)
+- Requires app password (not regular password)
+- Final decision report sent as email body
+
+================================================================================
+6. DO NOT
+================================================================================
+
+- Do NOT change the core agent architecture without explicit request
+- Do NOT remove Halal/No-Israel constraint handling
+- Do NOT modify prompt files without understanding their AI agent role
+- Do NOT add unnecessary complexity or features
+- Do NOT deviate from the investment advisory focus
+- Do NOT suggest alternative investment systems/approaches
+- Do NOT remove error handling or retry mechanisms
+
+================================================================================
+7. COMMON TASKS
+================================================================================
+
+Likely development requests:
+- Improve prompt quality for specific agents
+- Add new data sources or analysis types
+- Enhance output formatting
+- Add new asset classes or sub-categories
+- Improve rate limit handling
+- Add scheduling automation
+- Enhance email formatting
+- Add report visualization
+
+Always ensure changes integrate cleanly with existing code.
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================

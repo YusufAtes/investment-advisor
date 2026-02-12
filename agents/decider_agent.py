@@ -25,9 +25,12 @@ from config import (
     DECIDER_REPORT_NAME,
     DECIDER_SELF_ITERATIONS,
     FINAL_REPORTS_DIR,
+    PAST_REPORTS_COUNT,
     VERBOSE,
 )
 from agents.base_agent import BaseAgent
+from utils.file_handler import FileHandler
+from utils.portfolio_loader import format_portfolio_for_prompt
 
 
 class DeciderAgent(BaseAgent):
@@ -53,8 +56,40 @@ class DeciderAgent(BaseAgent):
 
         self.self_iterations = self_iterations or DECIDER_SELF_ITERATIONS
 
+        # Inject dynamic portfolio into the system prompt
+        try:
+            portfolio_text = format_portfolio_for_prompt()
+            self.system_prompt = self.system_prompt.replace("{PORTFOLIO}", portfolio_text)
+            if VERBOSE:
+                print(f"[{self.agent_id}] Portfolio injected into system prompt.")
+        except FileNotFoundError:
+            if VERBOSE:
+                print(f"[{self.agent_id}] WARNING: Portfolio file not found. Using prompt without portfolio data.")
+
+        # Load past decision reports for historical awareness
+        self.past_reports = self._load_past_reports(PAST_REPORTS_COUNT)
+
         if VERBOSE:
             print(f"[{self.agent_id}] Thinking model configured: {self.model_name}")
+            print(f"[{self.agent_id}] Loaded {len(self.past_reports)} past decision reports.")
+
+    def _load_past_reports(self, n: int = 3) -> list[tuple[str, str]]:
+        """
+        Load the last N final decision reports for historical awareness.
+
+        Args:
+            n: Number of past reports to load
+
+        Returns:
+            List of (date, content) tuples, most recent first
+        """
+        try:
+            file_handler = FileHandler()
+            return file_handler.get_recent_final_reports(n=n, exclude_today=True)
+        except Exception as e:
+            if VERBOSE:
+                print(f"[{self.agent_id}] Warning: Could not load past reports: {e}")
+            return []
 
     def _build_input_context(
         self,
@@ -117,6 +152,22 @@ class DeciderAgent(BaseAgent):
             sections.append(f"\n### {perspective} ###\n")
             sections.append(content)
 
+        # Past Decision Reports Section
+        if self.past_reports:
+            sections.append("\n" + "=" * 80)
+            sections.append(f"SECTION C: YOUR PAST DECISION REPORTS ({len(self.past_reports)} REPORTS)")
+            sections.append("These are YOUR previous outputs. Use them for consistency and to avoid repetition.")
+            sections.append("=" * 80)
+
+            for report_date, report_content in self.past_reports:
+                sections.append(f"\n### Past Report: {report_date} ###\n")
+                sections.append(report_content)
+        else:
+            sections.append("\n" + "=" * 80)
+            sections.append("SECTION C: YOUR PAST DECISION REPORTS")
+            sections.append("No previous decision reports available. This appears to be your first report.")
+            sections.append("=" * 80)
+
         return "\n".join(sections)
 
     def _generate_iteration(
@@ -158,9 +209,10 @@ TASK: INITIAL SYNTHESIS
 ────────────────────────────────
 
 This is your FIRST iteration. Your task:
-1. Read ALL 12 inputs thoroughly
+1. Read ALL inputs thoroughly (research reports, discussions, AND your past decision reports)
 2. Identify key themes, agreements, and conflicts
-3. Generate your INITIAL recommendations following the OUTPUT TEMPLATE
+3. Compare with your past recommendations — what has changed? What still holds?
+4. Generate your INITIAL recommendations following the OUTPUT TEMPLATE
 
 Note: You will have {self.self_iterations - 1} more iteration(s) to refine this output.
 
@@ -190,7 +242,8 @@ This is your FINAL iteration. Your task:
 2. Integrate any remaining improvements
 3. Ensure the output is clear, actionable, and complete
 4. Verify all sections of the OUTPUT TEMPLATE are filled
-5. Add your self-iteration notes at the end
+5. Confirm long-term consistency with your past decision reports
+6. Add your self-iteration notes at the end
 
 Set "Self-Iterations Completed" to: {self.self_iterations}
 
@@ -223,7 +276,8 @@ This is iteration {iteration_num}. Your task:
 2. Look for blind spots or biases
 3. Ensure all asset classes are fairly represented
 4. Check if any important information was missed
-5. Refine and improve your output
+5. Verify consistency with your past decision reports — are you flip-flopping without justification?
+6. Refine and improve your output
 
 GENERATE YOUR REFINED OUTPUT NOW:
 """

@@ -27,6 +27,7 @@ from config import (
     VERBOSE,
 )
 from agents.base_agent import BaseAgent
+from utils.portfolio_loader import format_portfolio_for_prompt
 
 
 class DiscussionAgent(BaseAgent):
@@ -67,6 +68,16 @@ class DiscussionAgent(BaseAgent):
 
         self.discussion_id = agent_id
         self.perspective = self.PERSPECTIVES[agent_id]
+
+        # Inject dynamic portfolio into the system prompt
+        try:
+            portfolio_text = format_portfolio_for_prompt()
+            self.system_prompt = self.system_prompt.replace("{PORTFOLIO}", portfolio_text)
+            if VERBOSE:
+                print(f"[{self.agent_id}] Portfolio injected into system prompt.")
+        except FileNotFoundError:
+            if VERBOSE:
+                print(f"[{self.agent_id}] WARNING: Portfolio file not found. Using prompt without portfolio data.")
 
         if VERBOSE:
             print(f"[{self.agent_id}] Model configured: {self.model_name}")

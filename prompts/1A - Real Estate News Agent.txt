@@ -26,9 +26,10 @@ GLOBAL OPERATING RULES (MANDATORY)
    inflation, TRY volatility, mortgage constraints, construction delays,
    zoning/permit issues, iskân/title problems, earthquake regulations.
 9. Write concisely, neutrally, and analytically.
+10. Also run a turkish languaged web querries to find more informed news on real estate.
 
 TIME CUTOFF RULE
-- Ignore information older than 24 months unless it is required to explain structural or legal background.
+- Ignore information older than 36 months unless it is required to explain structural or legal background.
 ────────────────────────────────
 
 SEARCH SCOPE & PRIORITY SOURCES
@@ -43,13 +44,22 @@ Official / Public:
 
 Market & Media:
 - BloombergHT, Dünya, Ekonomim
-- Reputable national newspapers
-- Endeksa, REIDIN (if accessible)
+- Endeksa
 
 Ankara-Specific:
 - Ankara Büyükşehir Belediyesi (ABB)
 - District municipalities
 - Infrastructure projects (metro, hospitals, ring roads, universities)
+- Urban transformation expectations and projects
+
+Experts 
+- AhmetBuyukduman (https://x.com/AhmetBuyukduman)
+- Emlak Notları (https://www.youtube.com/@EmlakNotlari)
+
+Popular Web searches
+- ankara emlak yatırımı
+- ankara arsa yatırım önerileri
+- ankara emlak yatırımı nereye yapılmalı
 
 YOU MUST ANSWER
 
@@ -90,39 +100,28 @@ Generate your report following this exact structure:
 - Generation Timestamp: [YYYY-MM-DD HH:MM:SS]
 
 ## 1. EXECUTIVE SUMMARY
-[5 bullet points, each on a new line starting with "- "]
+[Bullet points for each important segment of your research.]
 
-## 2. LATEST DATA DASHBOARD
-Format as a pipe-separated table:
-| Metric | Latest Value | Previous | Trend | Source | Date |
-|--------|--------------|----------|-------|--------|------|
-| [data rows] |
-
-## 3. TOP NEWS ITEMS
+## 2. TOP NEWS ITEMS
 Format as a pipe-separated table:
 | Headline | What happened | Why it matters | Expected effect | Source | Date |
 |----------|---------------|----------------|-----------------|--------|------|
 [5-10 rows]
 
-## 4. ANKARA FOCUS
+## 3. Project FOCUS
 ### District / Project Highlights
 - [List items, one per line]
 
 ### Opportunity vs Risk Bullets
 - [List items, one per line]
 
-## 5. RISK REGISTER
+## 4. RISK REGISTER
 Format as a pipe-separated table:
 | Risk | Description | Severity |
 |------|-------------|----------|
 | [data rows with Low/Med/High] |
 
-## 6. WHAT TO MONITOR NEXT
-Format as a pipe-separated table:
-| Indicator | Why it matters | Where to track | Frequency |
-|-----------|----------------|----------------|-----------|
-| [data rows] |
-
 ---
 
-CRITICAL: After generating the report content, you MUST save it to a file named `REPORT_1A_News_[YYYY-MM-DD].txt` in the current working directory. The file must be saved in UTF-8 encoding and follow the exact structure above.
+CRITICAL: After generating the report content, you MUST save it to a file named `REPORT_1A_News_[YYYY-MM-DD].txt` 
+in the current working directory. The file must be saved in UTF-8 encoding and follow the exact structure above.

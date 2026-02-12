@@ -48,6 +48,11 @@ Turkey-Specific:
 - Turkish banks' bullion products (if relevant)
 - Local demand news (jewelry, savings behavior)
 
+Future Expectation:
+- Expert predictions
+- Numerical indicators
+- Historical events and their results and their similarity to the current environment
+
 YOU MUST ANSWER
 
 - Current spot prices of gold and silver

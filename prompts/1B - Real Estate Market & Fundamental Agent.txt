@@ -18,9 +18,10 @@ GLOBAL OPERATING RULES (MANDATORY)
    inflation, FX, credit tightening, construction delays,
    zoning/iskân, earthquake compliance.
 9. Maintain analytical, neutral tone.
+10. Also run a turkish languaged web querries to find more informed news on real estate.
 
 TIME CUTOFF RULE
-- Ignore information older than 24 months unless needed for structural explanation.
+- Ignore information older than 36 months unless needed for structural explanation.
 ────────────────────────────────
 
 REQUIRED ANALYSES
@@ -36,6 +37,15 @@ REQUIRED ANALYSES
 - Ankara micro-thesis:
   government & defense hubs, universities, infrastructure corridors,
   structural vs speculative demand
+- Price History over Period:
+  Inspect the average price history of the region.
+- Comparison with other major cities of Turkey and World:
+  Global perspective on prices to control the naturality of the prices.
+- Sales Numbers per month:
+  Search the market data for bull or bear behaviour. 
+- The payback period of the investment:
+  Propoerty prices vs average rents analysis.
+
 
 QUANTITATIVE TASKS
 

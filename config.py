@@ -46,6 +46,10 @@ DISCUSSION_MODEL = "gemini-2.5-pro"
 # 2.5-pro for synthesizing 12 inputs and making final decisions
 DECIDER_MODEL = "gemini-2.5-pro"
 
+# Inference agent - interactive Q&A with web search
+# 2.5-pro for deep thinking and evidence-based responses
+INFERENCE_MODEL = "gemini-2.5-pro"
+
 # =============================================================================
 # ITERATION SETTINGS
 # =============================================================================
@@ -55,6 +59,9 @@ DISCUSSION_ITERATIONS = 3
 
 # Number of self-iteration cycles for the decider agent
 DECIDER_SELF_ITERATIONS = 3
+
+# Number of past final reports to feed into the decider for historical awareness
+PAST_REPORTS_COUNT = 3
 
 # =============================================================================
 # PATH CONFIGURATION
@@ -71,6 +78,12 @@ REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 RESEARCH_REPORTS_DIR = os.path.join(REPORTS_DIR, "research")
 DISCUSSION_REPORTS_DIR = os.path.join(REPORTS_DIR, "discussion")
 FINAL_REPORTS_DIR = os.path.join(REPORTS_DIR, "final")
+
+# Portfolio directory
+PORTFOLIO_DIR = os.path.join(BASE_DIR, "portfolio")
+PORTFOLIO_FILE = os.path.join(PORTFOLIO_DIR, "current_portfolio.json")
+PORTFOLIO_HISTORY_DIR = os.path.join(PORTFOLIO_DIR, "history")
+PORTFOLIO_CHANGES_LOG = os.path.join(PORTFOLIO_DIR, "changes_log.json")
 
 # =============================================================================
 # AGENT PROMPT FILES
@@ -98,6 +111,9 @@ DISCUSSION_PROMPTS = {
 
 # Decider agent prompt
 DECIDER_PROMPT = "Decider Agent.txt"
+
+# Inference agent prompt
+INFERENCE_PROMPT = "Inference Agent.txt"
 
 # =============================================================================
 # REPORT FILE NAMING
@@ -134,11 +150,13 @@ DECIDER_REPORT_NAME = "FINAL_Decision_{date}.txt"
 RESEARCH_TEMPERATURE = 0.7
 DISCUSSION_TEMPERATURE = 0.7
 DECIDER_TEMPERATURE = 0.5
+INFERENCE_TEMPERATURE = 0.6  # Balanced for thoughtful responses
 
 # Maximum output tokens
 RESEARCH_MAX_TOKENS = 8192
 DISCUSSION_MAX_TOKENS = 4096
 DECIDER_MAX_TOKENS = 8192
+INFERENCE_MAX_TOKENS = 16384  # Larger for detailed responses
 
 # =============================================================================
 # LOGGING

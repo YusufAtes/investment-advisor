@@ -52,12 +52,25 @@ SEARCH SCOPE & PRIORITY SOURCES
 - Official ETF/fund issuer pages
 - Bloomberg, Reuters, Financial Times
 - TCMB, FED (macro context)
+- Fintables
+- TradingView
+- Barış Soydan
+- Mert Başaran
+
+FUTURE EXPECTATIONS
+
+- Expert predictions
+- Numerical indicators
+- Historical events and their results and their similarity to the current environment
 
 YOU MUST ANSWER
 
 - What are the latest news items affecting the CURRENT ASSETS?
 - Which macro or sector trends materially impact them?
 - What near-term events (earnings, rebalances, regulation) matter most?
+- Which alternative stock or funds can be invested in?
+- Bear or Bull market conditions?
+- Price expectations of the current assets
 
 REPORT GENERATION REQUIREMENTS
 
@@ -89,7 +102,7 @@ Generate your report following this exact structure:
 - Generation Timestamp: [YYYY-MM-DD HH:MM:SS]
 
 ## 1. EXECUTIVE SUMMARY
-[5 bullet points, each on a new line starting with "- "]
+[Bullet points, each on a new line starting with "- "]
 
 ## 2. MARKET & MACRO BACKDROP
 Format as a pipe-separated table:

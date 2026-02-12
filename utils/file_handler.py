@@ -5,6 +5,7 @@ Handles reading and writing report files for the Investment Advisor system.
 """
 
 import os
+import re
 import sys
 import glob
 from datetime import datetime
@@ -214,6 +215,63 @@ class FileHandler:
         filepath = os.path.join(directory, filename)
 
         return self.read_file(filepath)
+
+    def get_recent_final_reports(
+        self,
+        n: int = 3,
+        exclude_today: bool = True,
+        directory: Optional[str] = None,
+    ) -> list[tuple[str, str]]:
+        """
+        Load the N most recent final decision reports, sorted by date descending.
+
+        Args:
+            n: Number of recent reports to retrieve
+            exclude_today: Whether to exclude today's report
+            directory: Directory to scan (defaults to final_dir)
+
+        Returns:
+            List of (date_string, content) tuples, most recent first
+        """
+        if directory is None:
+            directory = self.final_dir
+
+        if not os.path.exists(directory):
+            return []
+
+        # Find all FINAL_Decision_*.txt files
+        pattern = os.path.join(directory, "FINAL_Decision_*.txt")
+        files = glob.glob(pattern)
+
+        # Extract dates from filenames and pair with paths
+        date_file_pairs = []
+        date_regex = re.compile(r"FINAL_Decision_(\d{4}-\d{2}-\d{2})\.txt$")
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        for filepath in files:
+            basename = os.path.basename(filepath)
+            match = date_regex.match(basename)
+            if match:
+                file_date = match.group(1)
+                if exclude_today and file_date == today:
+                    continue
+                date_file_pairs.append((file_date, filepath))
+
+        # Sort by date descending (most recent first)
+        date_file_pairs.sort(key=lambda x: x[0], reverse=True)
+
+        # Take top N
+        results = []
+        for file_date, filepath in date_file_pairs[:n]:
+            content = self.read_file(filepath)
+            if content:
+                results.append((file_date, content))
+
+        if VERBOSE:
+            print(f"[FileHandler] Loaded {len(results)} recent final reports (requested {n})")
+
+        return results
 
     def list_reports(
         self,
