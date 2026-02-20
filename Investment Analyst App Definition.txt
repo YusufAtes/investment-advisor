@@ -52,20 +52,26 @@ This profile becomes a persistent decision context for all advisory outputs.
 ________________
 
 
-4.2 Daily Advisory Reports
-The system produces daily advisory reports that may include:
+4.2 Regular Advisory Reports (Every 3 Days)
+The system produces advisory reports every 3 days that may include:
 * Market environment summary
-* Asset‑level observations
+* Asset‑level observations (Gold & Silver, Global Stocks & Funds, Turkish Stocks & Funds)
 * Portfolio impact analysis
 * Risk commentary
 * Recommendation section
+
 Recommendation Types
-The advisor is not forced to act every day. Possible outputs include:
+The advisor is not forced to act every cycle. Possible outputs include:
 * Buy / Increase exposure
 * Reduce / Exit exposure
 * Hold
 * Wait / No action recommended
 When no action is advised, the system provides a rationale and environmental overview to maintain user confidence and understanding.
+
+4.2.1 Data & Tracking Schedule
+* Stock & Fund Pool Initialization: Run once every 2 weeks to ensure compliance (S&P 500 Shariah, BIST 100 Katılım, MSCI ACWI Islamic Index, No Israel connection).
+* Price & Financial Data Updates: Run once daily using yfinance to gather rich fundamental datasets (ebitda_ev, ep_ttm, bp_ttm, cfp_ttm, roe, roe_stability, revenue_ttm_yoy_growth, net_profit_ttm_yoy_growth, residual_volatility, liquidity_turnover_weighted).
+* Main Generative Pipeline (Research -> Discussion -> Decision): Run once every 3 days.
 ________________
 
 

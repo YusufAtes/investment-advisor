@@ -18,24 +18,26 @@ This is a multi-agent investment advisory system designed to:
 
 
 - Gather real-time market data across THREE asset classes:
-  * Real Estate (Turkey-focused)
   * Gold & Silver (Precious Metals)
-  * Stocks & Funds (Global, Shariah-compliant focus)
+  * Global Stocks & Funds (Shariah-compliant focus)
+  * Turkish Stocks & Funds (BIST Katılım focus)
 
 
 - Process information through a structured pipeline:
-  RESEARCH (9 agents) -> DISCUSSION (3 agents) -> DECISION (1 agent) -> EMAIL
+  RESEARCH (9 agents) -> DISCUSSION (Dynamic N agents) -> DECISION (1 agent) -> EMAIL
+  * Research data combined with YFinance fundamental pool data -> Discussion Agents
+  * Discussion outputs -> Decider Agent (incorporating Memory of past actions)
 
 
-- Deliver daily investment guidance via email that is:
-  * Actionable and concise
+- Deliver regular investment guidance via email that is:
+  * Actionable and concise (Goal-based, future-proof, long-term focus)
   * Halal-compliant (Islamic finance constraints)
   * No-Israel verified (ethical investment constraint)
   * Currency-aware (TRY/USD/EUR exposure management)
   * Turkey-specific risk aware
 
 
-The system runs once daily and produces a final advisory report sent to the user.
+The main system runs once every 3 days and produces a final advisory report sent to the user.
 
 
 ================================================================================
@@ -62,18 +64,16 @@ investment-advisor/
 │   └── inference_agent.py  # Interactive Q&A agent (web search + report context)
 │
 ├── prompts/                # AGENT PROMPTS (see section 3)
-│   ├── 1A - Real Estate News Agent.txt
-│   ├── 1B - Real Estate Market & Fundamental Agent.txt
-│   ├── 1C - Real Estate Social & Sentiment Agent.txt
-│   ├── 2A - Gold & Silver News Agent.txt
-│   ├── 2B - Gold & Silver Market & Fundamental Agent.txt
-│   ├── 2C - Gold & Silver Social & Sentiment Agent.txt
-│   ├── 3A - Stocks & Funds News Agent.txt
-│   ├── 3B - Stocks & Funds Market & Fundamental Agent.txt
-│   ├── 3C - Stocks & Funds Social & Sentiment Agent.txt
-│   ├── Discussion Agent 1.txt    # Gold/Silver favored
-│   ├── Discussion Agent 2.txt    # Real Estate favored
-│   ├── Discussion Agent 3.txt    # Stocks/Funds favored
+│   ├── 1A - Gold & Silver News Agent.txt
+│   ├── 1B - Gold & Silver Market & Fundamental Agent.txt
+│   ├── 1C - Gold & Silver Social & Sentiment Agent.txt
+│   ├── 2A - Global Stocks & Funds News Agent.txt
+│   ├── 2B - Global Stocks & Funds Market & Fundamental Agent.txt
+│   ├── 2C - Global Stocks & Funds Social & Sentiment Agent.txt
+│   ├── 3A - Turkish Stocks & Funds News Agent.txt
+│   ├── 3B - Turkish Stocks & Funds Market & Fundamental Agent.txt
+│   ├── 3C - Turkish Stocks & Funds Social & Sentiment Agent.txt
+│   ├── Discussion Agent Template.txt    # Template for Mixture of Experts
 │   ├── Decider Agent.txt         # Final decision maker
 │   └── Inference Agent.txt       # Interactive inference prompt
 │
@@ -115,22 +115,24 @@ Each prompt defines:
 
 
 RESEARCH AGENTS (9 total):
-- 1A, 1B, 1C: Real Estate focus
-- 2A, 2B, 2C: Gold & Silver focus
-- 3A, 3B, 3C: Stocks & Funds focus
+- 1A, 1B, 1C: Gold & Silver focus
+- 2A, 2B, 2C: Global Stocks & Funds focus
+- 3A, 3B, 3C: Turkish Stocks & Funds focus
 - Each has sub-focus: News (A), Fundamentals (B), Sentiment (C)
 
 
-DISCUSSION AGENTS (3 total):
-- Each favors one asset class
-- Iteratively refine analysis (3 iterations default)
-- Use research reports + previous discussion outputs
+DISCUSSION AGENTS (Dynamic Count):
+- Operates as a Mixture of Experts
+- Each assigned a randomized continuous "agression level" (0 to 1) and JSON-style dynamic investing profile (e.g., Risk Appetite, Rationality, Strategy Consistency).
+- Iterate only once.
+- Incorporates research reports and yfinance structural financial data.
 
 
 DECIDER AGENT (1):
-- Synthesizes all 12 inputs (9 research + 3 discussion)
+- Synthesizes ONLY Discussion outputs (ignores raw research) + Portfolio + Past memory
+- Aligns with user's risk profile (default 2.2-2.3 Moderately Aggressive)
 - Self-iterates 3 times for quality
-- Produces final actionable summary
+- Produces final actionable summary with long-term, goal-based focus
 
 
 INFERENCE AGENT (1):
@@ -207,12 +209,15 @@ API CONFIGURATION:
 - Rate limiting: 10s delay between agents, retry with backoff
 
 
-PIPELINE EXECUTION:
-- Full run: python main.py
+PIPELINE EXECUTION (Cron Schedule):
+- Pool update run: python update_pool.py (Once in 2 weeks)
+- Price update run: python update_prices.py (Once a day)
+- Full system run: python main.py (Once in 3 days)
+
 - Skip email: python main.py --skip-email
 - Research only: python main.py --research-only
 - Discussion only: python main.py --discussion-only
-- Decider only: python main.py --decider-only --iteration 3
+- Decider only: python main.py --decider-only
 - Interactive inference: python inference.py  (optional: -n 5, --no-context)
 - Portfolio management: python manage_portfolio.py  (optional: --view, --history)
 

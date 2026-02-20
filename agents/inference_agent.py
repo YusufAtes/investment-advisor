@@ -26,6 +26,7 @@ from config import (
     VERBOSE,
 )
 from agents.base_agent import BaseAgent
+from utils.portfolio_loader import format_portfolio_for_prompt
 
 
 class InferenceAgent(BaseAgent):
@@ -58,7 +59,7 @@ class InferenceAgent(BaseAgent):
         final_reports: list,
     ) -> str:
         """
-        Build the complete context from final reports.
+        Build the complete context from portfolio and final reports.
         
         Args:
             final_reports: List of tuples [(date, content), ...] sorted newest first
@@ -73,10 +74,21 @@ class InferenceAgent(BaseAgent):
         sections.append(f"INVESTMENT ADVISOR CONTEXT - {current_date}")
         sections.append("=" * 80)
         
+        # Current Portfolio Section
+        try:
+            portfolio_text = format_portfolio_for_prompt()
+            sections.append("\n" + "=" * 80)
+            sections.append("SECTION A: CURRENT PORTFOLIO")
+            sections.append("=" * 80)
+            sections.append("\nThis is the user's current investment portfolio:")
+            sections.append(portfolio_text)
+        except FileNotFoundError:
+            sections.append("\n[Portfolio data not available]")
+        
         # Final Reports Section
         if final_reports:
             sections.append("\n" + "=" * 80)
-            sections.append(f"HISTORICAL FINAL DECISION REPORTS ({len(final_reports)} reports)")
+            sections.append(f"SECTION B: PAST DECISION REPORTS ({len(final_reports)} most recent)")
             sections.append("=" * 80)
             sections.append("\nThese are the most recent synthesized recommendations (newest first):")
             
@@ -135,11 +147,12 @@ USER'S QUESTION
 INSTRUCTIONS
 ================================================================================
 
-1. First, carefully analyze all the context provided above
-2. Use web search to get CURRENT prices, news, and market data
-3. Cross-reference the reports with real-time information
-4. Think deeply about the user's specific situation
-5. Provide a comprehensive, evidence-based response following the format in your prompt
+1. First, review the user's CURRENT PORTFOLIO to understand their holdings and allocation
+2. Analyze the past decision reports for relevant recommendations and trends
+3. Use web search to get CURRENT prices, news, and market data
+4. Cross-reference the portfolio, reports, and real-time information
+5. Think deeply about the user's specific situation and portfolio context
+6. Provide a comprehensive, evidence-based response following the format in your prompt
 
 Remember: The user is relying on you for informed guidance. Be thorough but clear.
 

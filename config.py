@@ -82,8 +82,20 @@ FINAL_REPORTS_DIR = os.path.join(REPORTS_DIR, "final")
 # Portfolio directory
 PORTFOLIO_DIR = os.path.join(BASE_DIR, "portfolio")
 PORTFOLIO_FILE = os.path.join(PORTFOLIO_DIR, "current_portfolio.json")
+ADVISORY_PORTFOLIO_FILE = os.path.join(PORTFOLIO_DIR, "advisory_portfolio.json")
 PORTFOLIO_HISTORY_DIR = os.path.join(PORTFOLIO_DIR, "history")
 PORTFOLIO_CHANGES_LOG = os.path.join(PORTFOLIO_DIR, "changes_log.json")
+
+# Tracking directory (price history, evaluation, plots)
+TRACKING_DIR = os.path.join(BASE_DIR, "tracking")
+PRICE_HISTORY_FILE = os.path.join(TRACKING_DIR, "price_history.txt")
+EVALUATION_LOG = os.path.join(TRACKING_DIR, "evaluation_log.csv")
+ADVISORY_ACTIONS_LOG = os.path.join(TRACKING_DIR, "advisory_actions_log.json")
+PLOTS_DIR = os.path.join(TRACKING_DIR, "plots")
+
+# =============================================================================
+# AGENT PROMPT FILES
+# =============================================================================
 
 # =============================================================================
 # AGENT PROMPT FILES
@@ -91,23 +103,21 @@ PORTFOLIO_CHANGES_LOG = os.path.join(PORTFOLIO_DIR, "changes_log.json")
 
 # Research agent prompts (9 agents)
 RESEARCH_PROMPTS = {
-    "1A": "1A - Real Estate News Agent.txt",
-    "1B": "1B - Real Estate Market & Fundamental Agent.txt",
-    "1C": "1C - Real Estate Social & Sentiment Agent.txt",
-    "2A": "2A - Gold & Silver News Agent.txt",
-    "2B": "2B - Gold & Silver Market & Fundamental Agent.txt",
-    "2C": "2C - Gold & Silver Social & Sentiment Agent.txt",
-    "3A": "3A - Stocks & Funds News Agent.txt",
-    "3B": "3B - Stocks & Funds Market & Fundamental Agent.txt",
-    "3C": "3C - Stocks & Funds Social & Sentiment Agent.txt",
+    "1A": "1A - Gold & Silver News Agent.txt",
+    "1B": "1B - Gold & Silver Market & Fundamental Agent.txt",
+    "1C": "1C - Gold & Silver Social & Sentiment Agent.txt",
+    "2A": "2A - Global Stocks & Funds News Agent.txt",
+    "2B": "2B - Global Stocks & Funds Market & Fundamental Agent.txt",
+    "2C": "2C - Global Stocks & Funds Social & Sentiment Agent.txt",
+    "3A": "3A - Turkish Stocks & Funds News Agent.txt",
+    "3B": "3B - Turkish Stocks & Funds Market & Fundamental Agent.txt",
+    "3C": "3C - Turkish Stocks & Funds Social & Sentiment Agent.txt",
 }
 
-# Discussion agent prompts (3 agents)
-DISCUSSION_PROMPTS = {
-    "gold_silver": "Discussion Agent 1.txt",      # Gold & Silver favored
-    "real_estate": "Discussion Agent 2.txt",      # Real Estate favored
-    "stocks_funds": "Discussion Agent 3.txt",     # Stocks & Funds favored
-}
+# Discussion agent prompts (Template used dynamically)
+DISCUSSION_PROMPT_TEMPLATE = "Discussion Agent Template.txt"
+# Number of dynamically generated mixture of experts (user wants 10 default)
+DISCUSSION_AGENT_COUNT = 10
 
 # Decider agent prompt
 DECIDER_PROMPT = "Decider Agent.txt"
@@ -121,22 +131,20 @@ INFERENCE_PROMPT = "Inference Agent.txt"
 
 # Research report filename patterns
 RESEARCH_REPORT_NAMES = {
-    "1A": "REPORT_1A_News_{date}.txt",
-    "1B": "REPORT_1B_Fundamental_{date}.txt",
-    "1C": "REPORT_1C_Sentiment_{date}.txt",
-    "2A": "REPORT_2A_Metals_News_{date}.txt",
-    "2B": "REPORT_2B_Metals_Fundamentals_{date}.txt",
-    "2C": "REPORT_2C_Metals_Sentiment_{date}.txt",
-    "3A": "REPORT_3A_StocksFunds_News_{date}.txt",
-    "3B": "REPORT_3B_StocksFunds_Fundamental_{date}.txt",
-    "3C": "REPORT_3C_StocksFunds_Sentiment_{date}.txt",
+    "1A": "REPORT_1A_Metals_News_{date}.txt",
+    "1B": "REPORT_1B_Metals_Fundamentals_{date}.txt",
+    "1C": "REPORT_1C_Metals_Sentiment_{date}.txt",
+    "2A": "REPORT_2A_GlobalStocksFunds_News_{date}.txt",
+    "2B": "REPORT_2B_GlobalStocksFunds_Fundamental_{date}.txt",
+    "2C": "REPORT_2C_GlobalStocksFunds_Sentiment_{date}.txt",
+    "3A": "REPORT_3A_TurkishStocksFunds_News_{date}.txt",
+    "3B": "REPORT_3B_TurkishStocksFunds_Fundamental_{date}.txt",
+    "3C": "REPORT_3C_TurkishStocksFunds_Sentiment_{date}.txt",
 }
 
 # Discussion report filename patterns
 DISCUSSION_REPORT_NAMES = {
-    "gold_silver": "DISCUSSION_GoldSilver_Iter{iteration}_{date}.txt",
-    "real_estate": "DISCUSSION_RealEstate_Iter{iteration}_{date}.txt",
-    "stocks_funds": "DISCUSSION_StocksFunds_Iter{iteration}_{date}.txt",
+    "{agent_id}": "DISCUSSION_{agent_id}_{date}.txt",
 }
 
 # Final decider report filename pattern

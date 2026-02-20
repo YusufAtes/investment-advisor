@@ -61,13 +61,13 @@ def format_portfolio_for_prompt(portfolio: Optional[dict] = None, portfolio_file
     header = (
         f"{'Asset':<30} "
         f"{'Pieces':>8} "
-        f"{'Price/Pc(TL)':>14} "
-        f"{'Total(TL)':>14} "
+        f"{'Price/Pc(USD)':>15} "
         f"{'Total(USD)':>12} "
+        f"{'Total(TL)':>14} "
         f"{'%':>7}"
     )
     lines.append(header)
-    lines.append("-" * 90)
+    lines.append("-" * 92)
 
     # Group by category for readability
     categories_order = ["stocks_funds", "real_estate", "gold_silver", "cash"]
@@ -89,9 +89,9 @@ def format_portfolio_for_prompt(portfolio: Optional[dict] = None, portfolio_file
             row = (
                 f"  {asset['name']:<28} "
                 f"{asset['pieces']:>8.2f} "
-                f"{asset['price_per_piece_tl']:>14,.2f} "
-                f"{asset['total_tl']:>14,.2f} "
+                f"{asset['price_per_piece_usd']:>15,.6f} "
                 f"{asset['total_usd']:>12,.2f} "
+                f"{asset['total_tl']:>14,.2f} "
                 f"{asset['percentage']:>6.2f}%"
             )
             lines.append(row)
@@ -104,26 +104,26 @@ def format_portfolio_for_prompt(portfolio: Optional[dict] = None, portfolio_file
             row = (
                 f"  {asset['name']:<28} "
                 f"{asset['pieces']:>8.2f} "
-                f"{asset['price_per_piece_tl']:>14,.2f} "
-                f"{asset['total_tl']:>14,.2f} "
+                f"{asset['price_per_piece_usd']:>15,.6f} "
                 f"{asset['total_usd']:>12,.2f} "
+                f"{asset['total_tl']:>14,.2f} "
                 f"{asset['percentage']:>6.2f}%"
             )
             lines.append(row)
 
     # Totals
     lines.append("")
-    lines.append("-" * 90)
+    lines.append("-" * 92)
     total_row = (
         f"  {'TOTAL PORTFOLIO':<28} "
         f"{'':>8} "
-        f"{'':>14} "
-        f"{portfolio['total_portfolio_tl']:>14,.2f} "
+        f"{'':>15} "
         f"{portfolio['total_portfolio_usd']:>12,.2f} "
+        f"{portfolio['total_portfolio_tl']:>14,.2f} "
         f"{'100.00%':>7}"
     )
     lines.append(total_row)
-    lines.append("=" * 80)
+    lines.append("=" * 92)
 
     return "\n".join(lines)
 
@@ -169,11 +169,13 @@ def format_recent_changes_for_prompt(n: int = 10, changes_file: Optional[str] = 
     lines = ["RECENT PORTFOLIO CHANGES:"]
 
     for change in recent:
+        price = change.get("price_per_piece_usd", change.get("price_per_piece_tl", 0))
+        total = change.get("total_value_usd", change.get("total_value_tl", 0))
         line = (
             f"  [{change['date']}] {change['action'].upper()} "
             f"{change['pieces']} x {change['asset']} "
-            f"@ {change['price_per_piece_tl']:,.2f} TL "
-            f"(Total: {change['total_value_tl']:,.2f} TL)"
+            f"@ {price:,.4f} USD "
+            f"(Total: {total:,.2f} USD)"
         )
         lines.append(line)
         if change.get("notes"):

@@ -20,7 +20,7 @@ from config import (
     DISCUSSION_REPORTS_DIR,
     FINAL_REPORTS_DIR,
     RESEARCH_REPORT_NAMES,
-    DISCUSSION_REPORT_NAMES,
+    RESEARCH_REPORT_NAMES,
     DECIDER_REPORT_NAME,
     VERBOSE,
 )
@@ -177,16 +177,21 @@ class FileHandler:
         iteration_dir = os.path.join(directory, f"iteration_{iteration}")
         outputs = {}
 
-        for disc_id, filename_template in DISCUSSION_REPORT_NAMES.items():
-            filename = filename_template.format(iteration=iteration, date=date)
-            filepath = os.path.join(iteration_dir, filename)
+        pattern = os.path.join(iteration_dir, f"DISCUSSION_*_{date}.txt")
+        files = glob.glob(pattern)
 
+        for filepath in files:
+            # Extract agent ID from filename
+            basename = os.path.basename(filepath)
+            # Format is usually DISCUSSION_{agent_id}_{date}.txt
+            disc_id = basename.replace("DISCUSSION_", "").replace(f"_{date}.txt", "")
+            
             content = self.read_file(filepath)
             if content:
                 outputs[disc_id] = content
             else:
                 if VERBOSE:
-                    print(f"[FileHandler] Missing discussion output: {disc_id} (iteration {iteration})")
+                    print(f"[FileHandler] Warning: Could not read discussion output {filepath}")
 
         return outputs
 

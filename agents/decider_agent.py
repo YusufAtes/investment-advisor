@@ -93,63 +93,35 @@ class DeciderAgent(BaseAgent):
 
     def _build_input_context(
         self,
-        research_reports: dict[str, str],
         discussion_outputs: dict[str, str],
+        financial_pool_data: str,
     ) -> str:
         """
-        Build the complete input context from research and discussion outputs.
+        Build the complete input context from discussion outputs and pool data.
 
         Args:
-            research_reports: Dictionary mapping report ID to content
             discussion_outputs: Dictionary mapping discussion ID to content
+            financial_pool_data: String containing the YFinance data pool
 
         Returns:
             Formatted input context string
         """
         sections = []
 
-        # Research Reports Section
+        # Financial Pool Section
         sections.append("=" * 80)
-        sections.append("SECTION A: RESEARCH REPORTS (9 REPORTS)")
+        sections.append("SECTION A: YFINANCE FINANCIAL DATA POOL")
         sections.append("=" * 80)
-
-        # Group by asset class
-        real_estate_reports = {k: v for k, v in research_reports.items() if k.startswith("1")}
-        metals_reports = {k: v for k, v in research_reports.items() if k.startswith("2")}
-        stocks_reports = {k: v for k, v in research_reports.items() if k.startswith("3")}
-
-        # Real Estate
-        sections.append("\n### REAL ESTATE RESEARCH ###\n")
-        for report_id, content in real_estate_reports.items():
-            sections.append(f"\n--- Report {report_id} ---\n")
-            sections.append(content)
-
-        # Gold & Silver
-        sections.append("\n### GOLD & SILVER RESEARCH ###\n")
-        for report_id, content in metals_reports.items():
-            sections.append(f"\n--- Report {report_id} ---\n")
-            sections.append(content)
-
-        # Stocks & Funds
-        sections.append("\n### STOCKS & FUNDS RESEARCH ###\n")
-        for report_id, content in stocks_reports.items():
-            sections.append(f"\n--- Report {report_id} ---\n")
-            sections.append(content)
+        sections.append("\n" + financial_pool_data + "\n")
 
         # Discussion Outputs Section
+        num_discussions = len(discussion_outputs)
         sections.append("\n" + "=" * 80)
-        sections.append("SECTION B: DISCUSSION AGENT OUTPUTS (3 PERSPECTIVES)")
+        sections.append(f"SECTION B: DISCUSSION AGENT OUTPUTS ({num_discussions} EXPERTS)")
         sections.append("=" * 80)
 
-        perspective_names = {
-            "gold_silver": "Gold & Silver–Favored Perspective",
-            "real_estate": "Real Estate–Favored Perspective",
-            "stocks_funds": "Stocks & Funds–Favored Perspective",
-        }
-
         for disc_id, content in discussion_outputs.items():
-            perspective = perspective_names.get(disc_id, disc_id)
-            sections.append(f"\n### {perspective} ###\n")
+            sections.append(f"\n### Expert Perspective: {disc_id} ###\n")
             sections.append(content)
 
         # Past Decision Reports Section
@@ -303,15 +275,15 @@ GENERATE YOUR REFINED OUTPUT NOW:
 
     def generate_decision(
         self,
-        research_reports: dict[str, str],
         discussion_outputs: dict[str, str],
+        financial_pool_data: str,
     ) -> str:
         """
         Generate the final investment decision through self-iteration.
 
         Args:
-            research_reports: Dictionary mapping report ID to content
             discussion_outputs: Dictionary mapping discussion ID to content
+            financial_pool_data: YFinance metrics.
 
         Returns:
             Final decision output
@@ -319,8 +291,7 @@ GENERATE YOUR REFINED OUTPUT NOW:
         if VERBOSE:
             print(f"\n[{self.agent_id}] Starting decision process with {self.self_iterations} self-iterations...")
 
-        # Build input context
-        input_context = self._build_input_context(research_reports, discussion_outputs)
+        input_context = self._build_input_context(discussion_outputs, financial_pool_data)
 
         # Run self-iterations
         current_output = None
@@ -377,22 +348,22 @@ GENERATE YOUR REFINED OUTPUT NOW:
 
     def run(
         self,
-        research_reports: dict[str, str],
         discussion_outputs: dict[str, str],
+        financial_pool_data: str,
         output_dir: Optional[str] = None,
     ) -> tuple[str, str]:
         """
         Execute the full decision workflow: generate and save.
 
         Args:
-            research_reports: Dictionary mapping report ID to content
             discussion_outputs: Dictionary mapping discussion ID to content
+            financial_pool_data: String of YFinance financial data
             output_dir: Optional output directory override
 
         Returns:
             Tuple of (decision_content, filepath)
         """
-        content = self.generate_decision(research_reports, discussion_outputs)
+        content = self.generate_decision(discussion_outputs, financial_pool_data)
         filepath = self.save_decision(content, output_dir)
         return content, filepath
 

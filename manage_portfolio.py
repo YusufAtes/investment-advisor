@@ -14,6 +14,8 @@ import json
 import os
 import shutil
 import sys
+import urllib.request
+import urllib.error
 from datetime import datetime
 from typing import Optional
 
@@ -60,7 +62,7 @@ def archive_portfolio(portfolio: dict) -> str:
     return archive_path
 
 
-def log_change(asset_name: str, action: str, pieces: float, price_per_piece_tl: float, notes: str = "") -> None:
+def log_change(asset_name: str, action: str, pieces: float, price_per_piece_usd: float, notes: str = "") -> None:
     """Append a change entry to the changes log."""
     changes = []
     if os.path.exists(PORTFOLIO_CHANGES_LOG):
@@ -72,8 +74,8 @@ def log_change(asset_name: str, action: str, pieces: float, price_per_piece_tl: 
         "asset": asset_name,
         "action": action,
         "pieces": pieces,
-        "price_per_piece_tl": price_per_piece_tl,
-        "total_value_tl": round(pieces * price_per_piece_tl, 2),
+        "price_per_piece_usd": price_per_piece_usd,
+        "total_value_usd": round(pieces * price_per_piece_usd, 2),
         "notes": notes,
     }
 
@@ -82,34 +84,27 @@ def log_change(asset_name: str, action: str, pieces: float, price_per_piece_tl: 
     with open(PORTFOLIO_CHANGES_LOG, "w", encoding="utf-8") as f:
         json.dump(changes, f, indent=2, ensure_ascii=False)
 
-    print(f"[OK] Change logged: {action.upper()} {pieces} x {asset_name} @ {price_per_piece_tl:.2f} TL")
+    print(f"[OK] Change logged: {action.upper()} {pieces} x {asset_name} @ {price_per_piece_usd:.4f} USD")
 
 
 def recalculate_portfolio(portfolio: dict) -> dict:
-    """Recalculate all derived fields (total_tl, total_usd, percentages)."""
+    """Recalculate all derived fields (total_usd, total_tl, percentages). USD-first."""
     exchange_rate = portfolio["exchange_rate_usd_try"]
 
-    # Recalculate each asset
+    # Recalculate each asset (USD-first)
     for asset in portfolio["assets"]:
-        asset["total_tl"] = round(asset["pieces"] * asset["price_per_piece_tl"], 2)
-        if exchange_rate > 0:
-            asset["total_usd"] = round(asset["total_tl"] / exchange_rate, 2)
-        else:
-            asset["total_usd"] = 0.0
+        asset["total_usd"] = round(asset["pieces"] * asset["price_per_piece_usd"], 2)
+        asset["total_tl"] = round(asset["total_usd"] * exchange_rate, 2)
 
     # Recalculate totals
-    total_tl = sum(asset["total_tl"] for asset in portfolio["assets"])
-    portfolio["total_portfolio_tl"] = round(total_tl, 2)
-
-    if exchange_rate > 0:
-        portfolio["total_portfolio_usd"] = round(total_tl / exchange_rate, 2)
-    else:
-        portfolio["total_portfolio_usd"] = 0.0
+    total_usd = sum(asset["total_usd"] for asset in portfolio["assets"])
+    portfolio["total_portfolio_usd"] = round(total_usd, 2)
+    portfolio["total_portfolio_tl"] = round(total_usd * exchange_rate, 2)
 
     # Recalculate percentages
     for asset in portfolio["assets"]:
-        if total_tl > 0:
-            asset["percentage"] = round((asset["total_tl"] / total_tl) * 100, 2)
+        if total_usd > 0:
+            asset["percentage"] = round((asset["total_usd"] / total_usd) * 100, 2)
         else:
             asset["percentage"] = 0.0
 
@@ -127,7 +122,7 @@ def display_portfolio(portfolio: dict) -> None:
     print("=" * 100)
 
     # Header
-    header = f"{'#':<4} {'Asset':<28} {'Pieces':>8} {'Price/Pc (TL)':>14} {'Total (TL)':>14} {'Total (USD)':>12} {'%':>7}"
+    header = f"{'#':<4} {'Asset':<28} {'Pieces':>8} {'Price/Pc (USD)':>15} {'Total (USD)':>12} {'Total (TL)':>14} {'%':>7}"
     print(header)
     print("-" * 100)
 
@@ -137,9 +132,9 @@ def display_portfolio(portfolio: dict) -> None:
             f"{i:<4} "
             f"{asset['name']:<28} "
             f"{asset['pieces']:>8.2f} "
-            f"{asset['price_per_piece_tl']:>14,.2f} "
-            f"{asset['total_tl']:>14,.2f} "
+            f"{asset['price_per_piece_usd']:>15,.6f} "
             f"{asset['total_usd']:>12,.2f} "
+            f"{asset['total_tl']:>14,.2f} "
             f"{asset['percentage']:>6.2f}%"
         )
         print(row)
@@ -150,9 +145,9 @@ def display_portfolio(portfolio: dict) -> None:
         f"{'':4} "
         f"{'TOTAL':<28} "
         f"{'':>8} "
-        f"{'':>14} "
-        f"{portfolio['total_portfolio_tl']:>14,.2f} "
+        f"{'':>15} "
         f"{portfolio['total_portfolio_usd']:>12,.2f} "
+        f"{portfolio['total_portfolio_tl']:>14,.2f} "
         f"{'100.00%':>7}"
     )
     print(total_row)
@@ -176,9 +171,9 @@ def display_changes_history() -> None:
     print("  PORTFOLIO CHANGE HISTORY")
     print("=" * 90)
 
-    header = f"{'Date':<22} {'Action':<6} {'Asset':<28} {'Pieces':>8} {'Price/Pc':>12} {'Total (TL)':>12}"
+    header = f"{'Date':<22} {'Action':<6} {'Asset':<28} {'Pieces':>8} {'Price/Pc(USD)':>14} {'Total (USD)':>12}"
     print(header)
-    print("-" * 90)
+    print("-" * 92)
 
     for change in changes:
         row = (
@@ -186,8 +181,8 @@ def display_changes_history() -> None:
             f"{change['action'].upper():<6} "
             f"{change['asset']:<28} "
             f"{change['pieces']:>8.2f} "
-            f"{change['price_per_piece_tl']:>12,.2f} "
-            f"{change['total_value_tl']:>12,.2f}"
+            f"{change.get('price_per_piece_usd', change.get('price_per_piece_tl', 0)):>14,.4f} "
+            f"{change.get('total_value_usd', change.get('total_value_tl', 0)):>12,.2f}"
         )
         print(row)
         if change.get("notes"):
@@ -231,6 +226,139 @@ def get_int_choice(prompt: str, min_val: int, max_val: int) -> int:
             print("  [!] Please enter a valid number.")
 
 
+def fetch_exchange_rate() -> Optional[float]:
+    """
+    Fetch the current USD/TRY exchange rate from a free API.
+
+    Returns:
+        The exchange rate (1 USD = X TRY), or None if the fetch fails.
+    """
+    apis = [
+        ("https://open.er-api.com/v6/latest/USD", lambda d: d["rates"]["TRY"]),
+        ("https://api.exchangerate-api.com/v4/latest/USD", lambda d: d["rates"]["TRY"]),
+    ]
+
+    for url, extractor in apis:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "PortfolioManager/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                rate = extractor(data)
+                if rate and rate > 0:
+                    return round(float(rate), 4)
+        except (urllib.error.URLError, json.JSONDecodeError, KeyError, TimeoutError):
+            continue
+
+    return None
+
+
+def get_exchange_rate(portfolio: dict) -> float:
+    """
+    Get the current USD/TRY exchange rate. Tries to fetch from web first,
+    falls back to manual entry.
+
+    Args:
+        portfolio: Current portfolio dict (for stored fallback rate)
+
+    Returns:
+        The exchange rate and updates the portfolio in-place.
+    """
+    print("\n  Fetching current USD/TRY exchange rate...")
+    rate = fetch_exchange_rate()
+
+    if rate is not None:
+        print(f"  [OK] Live exchange rate: 1 USD = {rate:.4f} TRY")
+        confirm = get_input(f"  Use this rate? (y/n)", default="y")
+        if confirm.lower() == "y":
+            portfolio["exchange_rate_usd_try"] = rate
+            return rate
+        else:
+            manual_rate = get_float_input(
+                "  Enter exchange rate manually (1 USD = ? TRY)",
+                default=rate,
+            )
+            portfolio["exchange_rate_usd_try"] = manual_rate
+            return manual_rate
+    else:
+        print("  [!] Could not fetch exchange rate from web.")
+        manual_rate = get_float_input(
+            "  Enter USD/TRY exchange rate manually",
+            default=portfolio["exchange_rate_usd_try"],
+        )
+        portfolio["exchange_rate_usd_try"] = manual_rate
+        return manual_rate
+
+
+def get_price_with_currency(prompt: str, exchange_rate: float, default_usd: Optional[float] = None) -> float:
+    """
+    Ask the user for a price in either USD or TL, then convert to USD.
+
+    Args:
+        prompt: Description of what price is being entered
+        exchange_rate: Current USD/TRY exchange rate
+        default_usd: Optional default price in USD
+
+    Returns:
+        Price per piece in USD
+    """
+    default_str = f" [{default_usd:,.6f} USD]" if default_usd and default_usd > 0 else ""
+
+    while True:
+        raw = input(f"{prompt} (Please give the currency USD or TL){default_str}: ").strip()
+
+        # Handle default
+        if not raw and default_usd and default_usd > 0:
+            return default_usd
+
+        # Parse value and currency
+        raw_upper = raw.upper()
+
+        # Try to extract currency suffix/prefix
+        value_str = None
+        currency = None
+
+        if raw_upper.endswith("USD") or raw_upper.endswith("$"):
+            value_str = raw_upper.replace("USD", "").replace("$", "").strip()
+            currency = "USD"
+        elif raw_upper.endswith("TL") or raw_upper.endswith("TRY"):
+            value_str = raw_upper.replace("TRY", "").replace("TL", "").strip()
+            currency = "TL"
+        elif raw_upper.startswith("$"):
+            value_str = raw_upper.replace("$", "").strip()
+            currency = "USD"
+        else:
+            # No currency given, ask explicitly
+            try:
+                value = float(raw.replace(",", ""))
+            except ValueError:
+                print("  [!] Invalid input. Enter a number followed by USD or TL (e.g., '150 USD' or '5500 TL').")
+                continue
+
+            print("  1. USD")
+            print("  2. TL")
+            cur_choice = get_int_choice("  Which currency is this price in?", 1, 2)
+            currency = "USD" if cur_choice == 1 else "TL"
+            value_str = str(value)
+
+        try:
+            value = float(value_str.replace(",", ""))
+        except ValueError:
+            print("  [!] Invalid number. Try again (e.g., '150 USD' or '5500 TL').")
+            continue
+
+        if value < 0:
+            print("  [!] Price cannot be negative.")
+            continue
+
+        if currency == "USD":
+            print(f"  -> {value:,.6f} USD")
+            return value
+        else:
+            price_usd = round(value / exchange_rate, 6)
+            print(f"  -> {value:,.2f} TL / {exchange_rate:.4f} = {price_usd:,.6f} USD")
+            return price_usd
+
+
 def action_buy_sell(portfolio: dict) -> dict:
     """Handle a buy or sell action on an existing asset."""
     print("\n--- SELECT ASSET ---")
@@ -242,7 +370,7 @@ def action_buy_sell(portfolio: dict) -> dict:
 
     print(f"\nSelected: {selected_asset['name']}")
     print(f"Current pieces: {selected_asset['pieces']:.2f}")
-    print(f"Current price/piece: {selected_asset['price_per_piece_tl']:,.2f} TL")
+    print(f"Current price/piece: {selected_asset['price_per_piece_usd']:,.6f} USD")
 
     # Buy or Sell
     print("\n  1. BUY (add more)")
@@ -257,29 +385,26 @@ def action_buy_sell(portfolio: dict) -> dict:
         print(f"  [!] You only have {selected_asset['pieces']:.2f} pieces. Selling all.")
         pieces = selected_asset["pieces"]
 
-    # Price per piece
-    price_per_piece = get_float_input(
-        "Price per piece (TL)?",
-        default=selected_asset["price_per_piece_tl"] if selected_asset["price_per_piece_tl"] > 0 else None,
-    )
+    # Fetch/confirm exchange rate
+    exchange_rate = get_exchange_rate(portfolio)
 
-    # Update exchange rate
-    exchange_rate = get_float_input(
-        "Current USD/TRY exchange rate?",
-        default=portfolio["exchange_rate_usd_try"],
+    # Price per piece (currency-aware, stored in USD)
+    price_per_piece_usd = get_price_with_currency(
+        "Price per piece?",
+        exchange_rate=exchange_rate,
+        default_usd=selected_asset["price_per_piece_usd"] if selected_asset["price_per_piece_usd"] > 0 else None,
     )
-    portfolio["exchange_rate_usd_try"] = exchange_rate
 
     # Apply change
     if action == "buy":
         # Weighted average price if already holding
-        if selected_asset["pieces"] > 0 and selected_asset["price_per_piece_tl"] > 0:
-            total_old_value = selected_asset["pieces"] * selected_asset["price_per_piece_tl"]
-            total_new_value = pieces * price_per_piece
+        if selected_asset["pieces"] > 0 and selected_asset["price_per_piece_usd"] > 0:
+            total_old_value = selected_asset["pieces"] * selected_asset["price_per_piece_usd"]
+            total_new_value = pieces * price_per_piece_usd
             new_total_pieces = selected_asset["pieces"] + pieces
-            selected_asset["price_per_piece_tl"] = round((total_old_value + total_new_value) / new_total_pieces, 2)
+            selected_asset["price_per_piece_usd"] = round((total_old_value + total_new_value) / new_total_pieces, 6)
         else:
-            selected_asset["price_per_piece_tl"] = price_per_piece
+            selected_asset["price_per_piece_usd"] = price_per_piece_usd
         selected_asset["pieces"] = round(selected_asset["pieces"] + pieces, 4)
     else:
         selected_asset["pieces"] = round(selected_asset["pieces"] - pieces, 4)
@@ -288,13 +413,13 @@ def action_buy_sell(portfolio: dict) -> dict:
             # Keep price for reference, user can remove asset separately
 
         # Update price to current market price on sell
-        selected_asset["price_per_piece_tl"] = price_per_piece
+        selected_asset["price_per_piece_usd"] = price_per_piece_usd
 
     # Optional notes
     notes = get_input("Any notes? (press Enter to skip)", default="")
 
     # Log the change
-    log_change(selected_asset["name"], action, pieces, price_per_piece, notes)
+    log_change(selected_asset["name"], action, pieces, price_per_piece_usd, notes)
 
     # Recalculate
     portfolio = recalculate_portfolio(portfolio)
@@ -316,29 +441,37 @@ def action_add_asset(portfolio: dict) -> dict:
 
     # Category
     print("\nCategory:")
-    print("  1. stocks_funds")
-    print("  2. real_estate")
+    print("  1. global_stocks_funds")
+    print("  2. turkish_stocks_funds")
     print("  3. gold_silver")
     print("  4. cash")
-    cat_choice = get_int_choice("Select category", 1, 4)
-    categories = {1: "stocks_funds", 2: "real_estate", 3: "gold_silver", 4: "cash"}
+    print("  5. other")
+    cat_choice = get_int_choice("Select category", 1, 5)
+    categories = {
+        1: "global_stocks_funds",
+        2: "turkish_stocks_funds",
+        3: "gold_silver",
+        4: "cash",
+        5: "other"
+    }
     category = categories[cat_choice]
 
     pieces = get_float_input("Number of pieces?")
-    price_per_piece = get_float_input("Price per piece (TL)?")
 
-    # Update exchange rate
-    exchange_rate = get_float_input(
-        "Current USD/TRY exchange rate?",
-        default=portfolio["exchange_rate_usd_try"],
+    # Fetch/confirm exchange rate
+    exchange_rate = get_exchange_rate(portfolio)
+
+    # Price per piece (currency-aware, stored in USD)
+    price_per_piece_usd = get_price_with_currency(
+        "Price per piece?",
+        exchange_rate=exchange_rate,
     )
-    portfolio["exchange_rate_usd_try"] = exchange_rate
 
     new_asset = {
         "name": name,
         "category": category,
         "pieces": pieces,
-        "price_per_piece_tl": price_per_piece,
+        "price_per_piece_usd": price_per_piece_usd,
         "total_tl": 0.0,
         "total_usd": 0.0,
         "percentage": 0.0,
@@ -348,7 +481,7 @@ def action_add_asset(portfolio: dict) -> dict:
 
     # Log the change
     notes = get_input("Any notes? (press Enter to skip)", default="")
-    log_change(name, "buy", pieces, price_per_piece, notes)
+    log_change(name, "buy", pieces, price_per_piece_usd, notes)
 
     # Recalculate
     portfolio = recalculate_portfolio(portfolio)
@@ -390,31 +523,29 @@ def action_update_prices(portfolio: dict) -> dict:
 
     choice = get_int_choice("Select option", 1, 2)
 
-    # Update exchange rate first
-    exchange_rate = get_float_input(
-        "Current USD/TRY exchange rate?",
-        default=portfolio["exchange_rate_usd_try"],
-    )
-    portfolio["exchange_rate_usd_try"] = exchange_rate
+    # Fetch/confirm exchange rate first
+    exchange_rate = get_exchange_rate(portfolio)
 
     if choice == 1:
         print("\nEnter current price per piece for each asset (press Enter to keep current):\n")
         for asset in portfolio["assets"]:
-            new_price = get_float_input(
-                f"  {asset['name']} (current: {asset['price_per_piece_tl']:,.2f} TL)",
-                default=asset["price_per_piece_tl"],
+            new_price = get_price_with_currency(
+                f"  {asset['name']}",
+                exchange_rate=exchange_rate,
+                default_usd=asset["price_per_piece_usd"],
             )
-            asset["price_per_piece_tl"] = new_price
+            asset["price_per_piece_usd"] = new_price
     else:
         for i, asset in enumerate(portfolio["assets"], 1):
-            print(f"  {i}. {asset['name']} ({asset['price_per_piece_tl']:,.2f} TL)")
+            print(f"  {i}. {asset['name']} ({asset['price_per_piece_usd']:,.6f} USD)")
         asset_idx = get_int_choice("Select asset", 1, len(portfolio["assets"])) - 1
         selected = portfolio["assets"][asset_idx]
-        new_price = get_float_input(
-            f"New price for {selected['name']} (TL)?",
-            default=selected["price_per_piece_tl"],
+        new_price = get_price_with_currency(
+            f"New price for {selected['name']}",
+            exchange_rate=exchange_rate,
+            default_usd=selected["price_per_piece_usd"],
         )
-        selected["price_per_piece_tl"] = new_price
+        selected["price_per_piece_usd"] = new_price
 
     portfolio = recalculate_portfolio(portfolio)
     print("\n[OK] Prices updated and portfolio recalculated.")

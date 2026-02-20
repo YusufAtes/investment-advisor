@@ -14,25 +14,26 @@ A Python-based multi-agent system that generates periodic (every 72 hours) inves
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              RESEARCH PHASE                                  │
 │                                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                         │
-│  │ 1A-1C       │  │ 2A-2C       │  │ 3A-3C       │                         │
-│  │ Real Estate │  │ Gold/Silver │  │ Stocks/Funds│                         │
-│  │ (3 agents)  │  │ (3 agents)  │  │ (3 agents)  │                         │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                         │
-│         │                │                │                                  │
-│         └────────────────┼────────────────┘                                  │
-│                          ▼                                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
+│  │ 1A-1C        │  │ 2A-2C        │  │ 3A-3C        │                      │
+│  │ Gold & Silver│  │ Global Stocks│  │ Turkish Stock│                      │
+│  │ (3 agents)   │  │ (3 agents)   │  │ (3 agents)   │                      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                      │
+│         │                 │                 │                                │
+│         └─────────────────┼─────────────────┘                                │
+│                           ▼                                                  │
 └─────────────────────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
+                            │
+                            ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    DISCUSSION PHASE (N Iterations)                            │
-│                    + Dynamic Portfolio Context                                │
+│                    DISCUSSION PHASE (Single Iteration)                       │
+│                    + Dynamic Portfolio Context                               │
+│                    + YFinance Fundamental Data Pool                          │
 │                                                                              │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
-│  │ Agent 1         │  │ Agent 2         │  │ Agent 3         │             │
-│  │ Gold-Favored    │◄─┤ RE-Favored      │◄─┤ Stocks-Favored  │             │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘             │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │                  Mixture of Experts (N Agents)                  │       │
+│  │     (Dynamically generated JSON investing styles / limits)      │       │
+│  └────────────────────────────────┬────────────────────────────────┘       │
 │           │                    │                    │                        │
 │           └────────────────────┼────────────────────┘                        │
 │                                ▼                                             │
@@ -101,7 +102,17 @@ RECIPIENT_EMAIL=recipient@email.com
 
 ### 3. Set Up Your Portfolio
 
-Before running the pipeline, enter your current portfolio data:
+Because the `portfolio` folder is ignored by git to protect your privacy, you must create your initial portfolio structure.
+Create an initial portfolio for current holdings, and make a separate copy to represent the "advisory" hypothetical tracker.
+
+```bash
+mkdir portfolio
+# Example setup (create your JSON representations):
+# cp template.json portfolio/current_portfolio.json
+# cp template.json portfolio/advisory_portfolio.json
+```
+
+Or you can initialize it using the interactive tool:
 
 ```bash
 python manage_portfolio.py
@@ -113,24 +124,22 @@ This interactive tool lets you:
 - Update asset prices and exchange rates
 - View portfolio history
 
-All discussion and decider agents read the portfolio dynamically from `portfolio/current_portfolio.json`.
+All discussion and decider agents read the portfolio dynamically from these JSON files.
 
 ### 4. Verify Prompt Files
 
 Ensure all 14 prompt files exist in the `prompts/` directory:
 
-- `1A - Real Estate News Agent.txt`
-- `1B - Real Estate Market & Fundamental Agent.txt`
-- `1C - Real Estate Social & Sentiment Agent.txt`
-- `2A - Gold & Silver News Agent.txt`
-- `2B - Gold & Silver Market & Fundamental Agent.txt`
-- `2C - Gold & Silver Social & Sentiment Agent.txt`
-- `3A - Stocks & Funds News Agent.txt`
-- `3B - Stocks & Funds Market & Fundamental Agent.txt`
-- `3C - Stocks & Funds Social & Sentiment Agent.txt`
-- `Discussion Agent 1.txt`
-- `Discussion Agent 2.txt`
-- `Discussion Agent 3.txt`
+- `1A - Gold & Silver News Agent.txt`
+- `1B - Gold & Silver Market & Fundamental Agent.txt`
+- `1C - Gold & Silver Social & Sentiment Agent.txt`
+- `2A - Global Stocks & Funds News Agent.txt`
+- `2B - Global Stocks & Funds Market & Fundamental Agent.txt`
+- `2C - Global Stocks & Funds Social & Sentiment Agent.txt`
+- `3A - Turkish Stocks & Funds News Agent.txt`
+- `3B - Turkish Stocks & Funds Market & Fundamental Agent.txt`
+- `3C - Turkish Stocks & Funds Social & Sentiment Agent.txt`
+- `Discussion Agent Template.txt`
 - `Decider Agent.txt`
 - `Inference Agent.txt`
 

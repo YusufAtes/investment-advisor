@@ -68,7 +68,7 @@ After completing your analysis, you MUST generate a structured report file that 
 
 REPORT FILE SPECIFICATIONS:
 - Format: Plain text (.txt) with structured markdown-style formatting
-- Filename: `REPORT_2A_Metals_News_[YYYY-MM-DD].txt` (use current date in YYYY-MM-DD format)
+- Filename: `REPORT_1A_Metals_News_[YYYY-MM-DD].txt` (use current date in YYYY-MM-DD format)
 - Location: Save in the same directory as this prompt file
 - Encoding: UTF-8
 - Structure: Use clear section headers, consistent formatting, and structured data that is both human-readable and machine-parseable
@@ -127,4 +127,4 @@ Format as a pipe-separated table:
 
 ---
 
-CRITICAL: After generating the report content, you MUST save it to a file named `REPORT_2A_Metals_News_[YYYY-MM-DD].txt` in the current working directory. The file must be saved in UTF-8 encoding and follow the exact structure above.
+CRITICAL: After generating the report content, you MUST save it to a file named `REPORT_1A_Metals_News_[YYYY-MM-DD].txt` in the current working directory. The file must be saved in UTF-8 encoding and follow the exact structure above.

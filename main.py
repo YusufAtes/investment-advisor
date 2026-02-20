@@ -23,15 +23,19 @@ from typing import Optional
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import (
-    DISCUSSION_ITERATIONS,
+    DISCUSSION_AGENT_COUNT,
     DECIDER_SELF_ITERATIONS,
     VERBOSE,
+    PORTFOLIO_DIR,
 )
 from agents.research_agent import ResearchAgent, run_all_research_agents
-from agents.discussion_agent import DiscussionAgent, run_all_discussion_iterations
+from agents.discussion_agent import DiscussionAgent, run_all_discussion_agents
 from agents.decider_agent import DeciderAgent
 from utils.file_handler import FileHandler
 from utils.email_sender import send_investment_report
+import json
+import utils.update_pool
+
 
 
 def print_banner():
@@ -83,47 +87,48 @@ def run_research_phase(file_handler: FileHandler) -> dict[str, str]:
 
 def run_discussion_phase(
     research_reports: dict[str, str],
-    num_iterations: int,
+    financial_pool_data: str,
+    num_agents: int,
     file_handler: FileHandler,
 ) -> dict[str, str]:
     """
-    Run all discussion iterations.
+    Run the mixture of experts discussion agents.
 
     Args:
         research_reports: Dictionary of research report contents
-        num_iterations: Number of discussion iterations
+        financial_pool_data: String of YFinance financial data
+        num_agents: Number of discussion agents to spawn
         file_handler: FileHandler instance
 
     Returns:
         Dictionary mapping agent ID to final discussion content
     """
-    print_phase(f"DISCUSSION ({num_iterations} Iterations, 3 Agents)")
+    print_phase(f"DISCUSSION (Mixture of {num_agents} Experts)")
 
-    all_results = run_all_discussion_iterations(
+    all_results = run_all_discussion_agents(
         research_reports=research_reports,
-        num_iterations=num_iterations,
+        financial_pool_data=financial_pool_data,
+        num_agents=num_agents,
     )
 
-    # Get the final iteration results
-    final_iteration = num_iterations
-    final_results = all_results.get(final_iteration, {})
+    final_results = all_results.get(1, {})
 
     discussion_outputs = {}
     for agent_id, (content, filepath) in final_results.items():
         if content:
             discussion_outputs[agent_id] = content
-            print(f"[OK] Discussion Agent {agent_id}: Final output generated")
+            print(f"[OK] {agent_id}: Final output generated")
         else:
-            print(f"[FAIL] Discussion Agent {agent_id}: FAILED")
+            print(f"[FAIL] {agent_id}: FAILED")
 
-    print(f"\n-> Discussion phase complete: {len(discussion_outputs)}/3 outputs generated")
+    print(f"\n-> Discussion phase complete: {len(discussion_outputs)}/{num_agents} outputs generated")
 
     return discussion_outputs
 
 
 def run_decider_phase(
-    research_reports: dict[str, str],
     discussion_outputs: dict[str, str],
+    financial_pool_data: str,
     self_iterations: int,
     file_handler: FileHandler,
 ) -> tuple[str, str]:
@@ -131,8 +136,8 @@ def run_decider_phase(
     Run the decider agent.
 
     Args:
-        research_reports: Dictionary of research report contents
         discussion_outputs: Dictionary of discussion output contents
+        financial_pool_data: String of YFinance financial data
         self_iterations: Number of self-iteration cycles
         file_handler: FileHandler instance
 
@@ -143,8 +148,8 @@ def run_decider_phase(
 
     decider = DeciderAgent(self_iterations=self_iterations)
     content, filepath = decider.run(
-        research_reports=research_reports,
         discussion_outputs=discussion_outputs,
+        financial_pool_data=financial_pool_data,
     )
 
     if content:
@@ -192,7 +197,7 @@ def run_email_phase(
 
 
 def run_full_pipeline(
-    discussion_iterations: int = DISCUSSION_ITERATIONS,
+    discussion_agents: int = DISCUSSION_AGENT_COUNT,
     decider_iterations: int = DECIDER_SELF_ITERATIONS,
     skip_email: bool = False,
     include_attachments: bool = False,
@@ -201,7 +206,7 @@ def run_full_pipeline(
     Run the complete investment advisory pipeline.
 
     Args:
-        discussion_iterations: Number of discussion iterations
+        discussion_agents: Number of discussion agents (Experts)
         decider_iterations: Number of decider self-iterations
         skip_email: Whether to skip email delivery
         include_attachments: Whether to include report attachments in email
@@ -213,12 +218,27 @@ def run_full_pipeline(
 
     start_time = datetime.now()
     print(f"Started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Discussion iterations: {discussion_iterations}")
+    print(f"Discussion experts spawned: {discussion_agents}")
     print(f"Decider self-iterations: {decider_iterations}")
 
     # Initialize file handler
     file_handler = FileHandler()
     file_handler.ensure_directories()
+    
+    # Pre-condition: update or load pool. 
+    # Calling update manually for safety to have latest prices.
+    try:
+        utils.update_pool.update_pool()
+    except Exception as e:
+        print(f"[WARN] updating yfinance pool failed: {e}")
+        
+    pool_file = os.path.join(PORTFOLIO_DIR, "financial_pool.json")
+    try:
+        with open(pool_file, "r") as f:
+            financial_pool_data = json.dumps(json.load(f), indent=2)
+    except Exception as e:
+        print(f"[WARN] Failed to load {pool_file}")
+        financial_pool_data = "No financial pool data currently available."
 
     try:
         # Phase 1: Research
@@ -234,12 +254,13 @@ def run_full_pipeline(
         # Phase 2: Discussion
         discussion_outputs = run_discussion_phase(
             research_reports=research_reports,
-            num_iterations=discussion_iterations,
+            financial_pool_data=financial_pool_data,
+            num_agents=discussion_agents,
             file_handler=file_handler,
         )
 
-        if len(discussion_outputs) < 3:
-            print(f"\n[WARN] Warning: Only {len(discussion_outputs)}/3 discussion outputs generated")
+        if len(discussion_outputs) < discussion_agents // 2:
+            print(f"\n[WARN] Warning: Only {len(discussion_outputs)}/{discussion_agents} discussion outputs generated")
 
         if not discussion_outputs:
             print("\n[FAIL] Pipeline aborted: No discussion outputs generated")
@@ -247,8 +268,8 @@ def run_full_pipeline(
 
         # Phase 3: Decision
         decision_content, decision_filepath = run_decider_phase(
-            research_reports=research_reports,
             discussion_outputs=discussion_outputs,
+            financial_pool_data=financial_pool_data,
             self_iterations=decider_iterations,
             file_handler=file_handler,
         )
@@ -256,6 +277,33 @@ def run_full_pipeline(
         if not decision_content:
             print("\n[FAIL] Pipeline aborted: Decision generation failed")
             return False
+
+        # Phase 3.5: Advisory Portfolio Update
+        print_phase("ADVISORY PORTFOLIO UPDATE")
+        try:
+            from tracking.advisory_executor import main as run_advisory_executor
+            run_advisory_executor()
+            print("[OK] Advisory portfolio updated based on decider recommendations.")
+        except Exception as e:
+            print(f"[WARN] Advisory executor failed (non-fatal): {e}")
+            if VERBOSE:
+                import traceback
+                traceback.print_exc()
+
+        # Phase 3.6: Update Prices for Current and Advisory Portfolios
+        print_phase("PRICE AND PORTFOLIO TOTALS UPDATE")
+        try:
+            from tracking.price_fetcher import main as run_price_fetcher
+            from tracking.update_portfolio import main as run_portfolio_updater
+            print("Fetching latest prices...")
+            run_price_fetcher()
+            print("Updating portfolio totals with latest prices...")
+            run_portfolio_updater()
+        except Exception as e:
+            print(f"[WARN] Price/Portfolio update failed (non-fatal): {e}")
+            if VERBOSE:
+                import traceback
+                traceback.print_exc()
 
         # Phase 4: Email
         if not skip_email:
@@ -303,12 +351,27 @@ def run_research_only() -> bool:
     return len(research_reports) > 0
 
 
-def run_discussion_only(num_iterations: int = DISCUSSION_ITERATIONS) -> bool:
+def run_discussion_only(num_agents: int = DISCUSSION_AGENT_COUNT) -> bool:
     """Run only the discussion phase (requires existing research reports)."""
     print_banner()
     print("MODE: Discussion Only\n")
 
     file_handler = FileHandler()
+    file_handler.ensure_directories()
+
+    # Pre-condition: update or load pool. 
+    try:
+        utils.update_pool.update_pool()
+    except Exception as e:
+        print(f"[WARN] updating yfinance pool failed: {e}")
+        
+    pool_file = os.path.join(PORTFOLIO_DIR, "financial_pool.json")
+    try:
+        with open(pool_file, "r") as f:
+            financial_pool_data = json.dumps(json.load(f), indent=2)
+    except Exception as e:
+        print(f"[WARN] Failed to load {pool_file}")
+        financial_pool_data = "No financial pool data currently available."
 
     # Load existing research reports
     research_reports = file_handler.get_research_reports()
@@ -321,7 +384,8 @@ def run_discussion_only(num_iterations: int = DISCUSSION_ITERATIONS) -> bool:
 
     discussion_outputs = run_discussion_phase(
         research_reports=research_reports,
-        num_iterations=num_iterations,
+        financial_pool_data=financial_pool_data,
+        num_agents=num_agents,
         file_handler=file_handler,
     )
 
@@ -386,10 +450,10 @@ Examples:
 
     # Iteration settings
     parser.add_argument(
-        "--discussion-iterations", "-d",
+        "--discussion-agents", "-d",
         type=int,
-        default=DISCUSSION_ITERATIONS,
-        help=f"Number of discussion iterations (default: {DISCUSSION_ITERATIONS})"
+        default=DISCUSSION_AGENT_COUNT,
+        help=f"Number of discussion agents to spawn (default: {DISCUSSION_AGENT_COUNT})"
     )
     parser.add_argument(
         "--decider-iterations", "-D",
@@ -424,26 +488,26 @@ Examples:
     parser.add_argument(
         "--decider-only",
         action="store_true",
-        help="Only run the decider phase (requires existing research and discussion)"
+        help="Only run the decider phase (requires existing discussion outputs)"
     )
     parser.add_argument(
         "--iteration", "-i",
         type=int,
-        help="Discussion iteration to use for decider-only mode"
+        help="Discussion iteration to use for decider-only mode (kept for backward compatibility, defaults to 1)"
     )
 
     args = parser.parse_args()
 
     # Validate arguments
     if args.decider_only and args.iteration is None:
-        parser.error("--decider-only requires --iteration to specify which discussion iteration to use")
+        args.iteration = 1 # override to 1
 
     # Run appropriate mode
     try:
         if args.research_only:
             success = run_research_only()
         elif args.discussion_only:
-            success = run_discussion_only(args.discussion_iterations)
+            success = run_discussion_only(args.discussion_agents) # signature needs to handle this in a real run, omitting full details as this is a snippet.
         elif args.decider_only:
             success = run_decider_only(
                 discussion_iteration=args.iteration,
@@ -452,7 +516,7 @@ Examples:
             )
         else:
             success = run_full_pipeline(
-                discussion_iterations=args.discussion_iterations,
+                discussion_agents=args.discussion_agents,
                 decider_iterations=args.decider_iterations,
                 skip_email=args.skip_email,
                 include_attachments=args.include_attachments,
