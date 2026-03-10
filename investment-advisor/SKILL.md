@@ -22,20 +22,12 @@ agents (with web search), 10 discussion agents (Mixture of Experts with randomiz
 investing styles), and a final decider agent that produces comprehensive investment
 recommendations through self-iteration.
 
-## Prerequisites
+## First-Time Setup
 
-### API Keys
+Run these steps in order on the very first use. All commands assume the working
+directory is the skill's `scripts/` folder.
 
-A `.env` file must exist in `scripts/` with the following variables (copy `.env.example`):
-
-```
-GEMINI_API_KEY=<your-gemini-api-key>
-GMAIL_ADDRESS=<your-gmail>
-GMAIL_APP_PASSWORD=<your-app-password>
-RECIPIENT_EMAIL=<recipient-email>
-```
-
-### Python Dependencies
+### 1. Install Dependencies
 
 ```bash
 cd scripts
@@ -45,10 +37,63 @@ pip install -r requirements.txt
 Requires Python 3.11+. Key dependencies: `google-genai`, `python-dotenv`, `yfinance`,
 `tefas`, `pandas`, `matplotlib`.
 
-### Portfolio Setup
+### 2. Configure API Keys
 
-A portfolio JSON file must exist at `scripts/portfolio/current_portfolio.json`.
-Use the portfolio manager (Step 6) to create and maintain it.
+Copy `.env.example` to `.env` and fill in real values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+- `GEMINI_API_KEY` — from https://aistudio.google.com/apikey
+- `GMAIL_ADDRESS` — sender Gmail address (for email delivery)
+- `GMAIL_APP_PASSWORD` — 16-char app password from https://myaccount.google.com/apppasswords
+- `RECIPIENT_EMAIL` — where to send the final report
+
+### 3. Initialize Portfolio
+
+Create an empty portfolio (fetches live USD/TRY rate automatically):
+
+```bash
+cd scripts
+python manage_portfolio.py --init
+```
+
+Then add assets. For non-interactive (AI agent) usage, create a JSON file and load it:
+
+```bash
+cd scripts
+python manage_portfolio.py --add-json assets.json
+```
+
+The JSON file should contain a list of asset objects:
+```json
+[
+  {
+    "name": "HLAL Fund",
+    "category": "global_stocks_funds",
+    "pieces": 100,
+    "price_per_piece_usd": 50.25
+  },
+  {
+    "name": "Gold (gram)",
+    "category": "gold_silver",
+    "pieces": 50,
+    "price_per_piece_usd": 95.0
+  }
+]
+```
+
+Valid categories: `global_stocks_funds`, `turkish_stocks_funds`, `gold_silver`,
+`cash`, `other`.
+
+For interactive usage (human), run without flags:
+
+```bash
+cd scripts
+python manage_portfolio.py
+```
 
 ## Instructions
 
@@ -109,13 +154,15 @@ python inference.py -q "Should I buy NVIDIA?"      # Single question mode
 
 ### Step 6: Portfolio Management
 
-Interactive CLI for managing portfolio assets (buy, sell, add, remove, update prices).
+CLI for managing portfolio assets (buy, sell, add, remove, update prices).
 
 ```bash
 cd scripts
-python manage_portfolio.py                # Interactive mode
-python manage_portfolio.py --view         # Display current portfolio
-python manage_portfolio.py --history      # View change history
+python manage_portfolio.py                    # Interactive mode (human use)
+python manage_portfolio.py --init             # Create empty portfolio (first-time)
+python manage_portfolio.py --add-json FILE    # Add assets from JSON (non-interactive)
+python manage_portfolio.py --view             # Display current portfolio
+python manage_portfolio.py --history          # View change history
 ```
 
 ### Step 7: Update Financial Data Pool
@@ -183,6 +230,18 @@ Decider Agent (3 self-iteration cycles)
        v
 Output: Final Report -> Email -> Advisory Portfolio Update -> Price Tracking
 ```
+
+## AI Agent Usage Notes
+
+When an AI agent uses this skill (non-interactive):
+
+- **Portfolio init**: Use `--init` then `--add-json` instead of interactive mode.
+- **Inference**: Use `-q "question"` flag instead of interactive mode.
+- **Pipeline**: `python main.py --skip-email` runs fully non-interactively.
+- **Portfolio file**: Can also be created directly by writing valid JSON to
+  `scripts/portfolio/current_portfolio.json` (see JSON structure in First-Time Setup).
+- The pipeline will warn but continue if no portfolio exists — research and discussion
+  phases still work, but advisory tracking phases will be skipped.
 
 ## Important Notes
 

@@ -30,10 +30,47 @@ PORTFOLIO_HISTORY_DIR = os.path.join(PORTFOLIO_DIR, "history")
 PORTFOLIO_CHANGES_LOG = os.path.join(PORTFOLIO_DIR, "changes_log.json")
 
 
+def create_empty_portfolio(exchange_rate: float = 34.0) -> dict:
+    """Create an empty portfolio template with the correct structure."""
+    return {
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "exchange_rate_usd_try": exchange_rate,
+        "total_portfolio_usd": 0.0,
+        "total_portfolio_tl": 0.0,
+        "assets": []
+    }
+
+
+def init_portfolio() -> None:
+    """Initialize a new empty portfolio file. Used for first-time setup."""
+    if os.path.exists(PORTFOLIO_FILE):
+        print(f"[INFO] Portfolio already exists at: {PORTFOLIO_FILE}")
+        print("  Use --view to see it, or run without flags for interactive mode.")
+        return
+
+    os.makedirs(PORTFOLIO_DIR, exist_ok=True)
+
+    # Try to fetch live exchange rate
+    print("Initializing new portfolio...")
+    rate = fetch_exchange_rate()
+    if rate:
+        print(f"  [OK] Live USD/TRY rate: {rate}")
+    else:
+        rate = 34.0
+        print(f"  [!] Could not fetch exchange rate. Using default: {rate}")
+
+    portfolio = create_empty_portfolio(exchange_rate=rate)
+    save_portfolio(portfolio)
+    print(f"\n[OK] Empty portfolio created at: {PORTFOLIO_FILE}")
+    print("  Run 'python manage_portfolio.py' to add assets interactively.")
+    print("  Or run 'python manage_portfolio.py --add-json <file>' to add assets from JSON.")
+
+
 def load_portfolio() -> dict:
     """Load the current portfolio from JSON file."""
     if not os.path.exists(PORTFOLIO_FILE):
-        print("[ERROR] Portfolio file not found. Please create portfolio/current_portfolio.json first.")
+        print("[ERROR] Portfolio file not found.")
+        print("  Run 'python manage_portfolio.py --init' to create one.")
         sys.exit(1)
 
     with open(PORTFOLIO_FILE, "r", encoding="utf-8") as f:
@@ -598,6 +635,51 @@ def interactive_menu() -> None:
                 break
 
 
+def add_assets_from_json(json_path: str) -> None:
+    """
+    Add assets to the portfolio from a JSON file (non-interactive).
+    The JSON file should contain a list of asset objects with fields:
+    name, category, pieces, price_per_piece_usd.
+
+    If portfolio doesn't exist, creates it first.
+    """
+    if not os.path.exists(PORTFOLIO_FILE):
+        print("[INFO] No portfolio found. Creating one first...")
+        init_portfolio()
+
+    portfolio = load_portfolio()
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        new_assets = json.load(f)
+
+    if not isinstance(new_assets, list):
+        new_assets = [new_assets]
+
+    for asset_data in new_assets:
+        name = asset_data.get("name", "Unknown")
+        # Check duplicate
+        existing_names = [a["name"].lower() for a in portfolio["assets"]]
+        if name.lower() in existing_names:
+            print(f"  [SKIP] '{name}' already exists.")
+            continue
+
+        new_asset = {
+            "name": name,
+            "category": asset_data.get("category", "other"),
+            "pieces": float(asset_data.get("pieces", 0)),
+            "price_per_piece_usd": float(asset_data.get("price_per_piece_usd", 0)),
+            "total_tl": 0.0,
+            "total_usd": 0.0,
+            "percentage": 0.0,
+        }
+        portfolio["assets"].append(new_asset)
+        print(f"  [OK] Added '{name}'")
+
+    portfolio = recalculate_portfolio(portfolio)
+    save_portfolio(portfolio)
+    display_portfolio(portfolio)
+
+
 def main():
     """Entry point with argument parsing."""
     import argparse
@@ -605,9 +687,15 @@ def main():
     parser = argparse.ArgumentParser(description="Investment Portfolio Manager")
     parser.add_argument("--view", action="store_true", help="View current portfolio")
     parser.add_argument("--history", action="store_true", help="View change history")
+    parser.add_argument("--init", action="store_true", help="Initialize a new empty portfolio (first-time setup)")
+    parser.add_argument("--add-json", type=str, metavar="FILE", help="Add assets from a JSON file (non-interactive)")
     args = parser.parse_args()
 
-    if args.view:
+    if args.init:
+        init_portfolio()
+    elif args.add_json:
+        add_assets_from_json(args.add_json)
+    elif args.view:
         portfolio = load_portfolio()
         portfolio = recalculate_portfolio(portfolio)
         display_portfolio(portfolio)

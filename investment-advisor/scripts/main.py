@@ -27,6 +27,8 @@ from config import (
     DECIDER_SELF_ITERATIONS,
     VERBOSE,
     PORTFOLIO_DIR,
+    PORTFOLIO_FILE,
+    GEMINI_API_KEY,
 )
 from agents.research_agent import ResearchAgent, run_all_research_agents
 from agents.discussion_agent import DiscussionAgent, run_all_discussion_agents
@@ -215,6 +217,17 @@ def run_full_pipeline(
         True if pipeline completed successfully
     """
     print_banner()
+
+    # Pre-flight checks
+    if GEMINI_API_KEY in ("your-gemini-api-key", ""):
+        print("[FAIL] GEMINI_API_KEY not configured.")
+        print("  Create a .env file with your API key. See .env.example for the template.")
+        return False
+
+    if not os.path.exists(PORTFOLIO_FILE):
+        print("[WARN] Portfolio file not found. The pipeline will run but advisory")
+        print("  tracking phases will be skipped. To set up a portfolio, run:")
+        print("  python manage_portfolio.py --init")
 
     start_time = datetime.now()
     print(f"Started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")

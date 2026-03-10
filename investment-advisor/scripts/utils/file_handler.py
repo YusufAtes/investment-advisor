@@ -19,6 +19,8 @@ from config import (
     RESEARCH_REPORTS_DIR,
     DISCUSSION_REPORTS_DIR,
     FINAL_REPORTS_DIR,
+    PORTFOLIO_DIR,
+    PORTFOLIO_HISTORY_DIR,
     RESEARCH_REPORT_NAMES,
     RESEARCH_REPORT_NAMES,
     DECIDER_REPORT_NAME,
@@ -50,6 +52,8 @@ class FileHandler:
             self.research_dir,
             self.discussion_dir,
             self.final_dir,
+            PORTFOLIO_DIR,
+            PORTFOLIO_HISTORY_DIR,
         ]
 
         for directory in dirs:
