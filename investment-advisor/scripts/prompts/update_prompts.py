@@ -1,7 +1,7 @@
 import os
 import re
 
-prompts_dir = r"c:\investment advisor\prompts"
+prompts_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 1. Update Gold & Silver (1A, 1B, 1C)
 for f in ["1A - Gold & Silver News Agent.txt", "1B - Gold & Silver Market & Fundamental Agent.txt", "1C - Gold & Silver Social & Sentiment Agent.txt"]:

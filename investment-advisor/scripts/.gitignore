@@ -17,6 +17,7 @@ tracking/plots/
 
 # Environment and IDE
 .env
+!.env.example
 __pycache__/
 *.pyc
 .vscode/
@@ -24,3 +25,4 @@ __pycache__/
 last_run.txt
 last_price_update.txt
 api.txt
+investment_advisor.log
