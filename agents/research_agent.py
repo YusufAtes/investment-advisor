@@ -88,6 +88,7 @@ BEGIN YOUR RESEARCH AND GENERATE THE REPORT:
 """
 
         full_prompt = self._build_prompt(user_input)
+        self._last_input = full_prompt
 
         if VERBOSE:
             print(f"[{self.agent_id}] Starting research with web search...")
@@ -173,6 +174,16 @@ BEGIN YOUR RESEARCH AND GENERATE THE REPORT:
 
         if VERBOSE:
             print(f"[{self.agent_id}] Report saved to: {filepath}")
+
+        # Save the model input alongside the output
+        input_filename = "INPUT_" + filename
+        input_filepath = os.path.join(output_dir, input_filename)
+        input_to_save = getattr(self, "_last_input", "")
+        if input_to_save:
+            with open(input_filepath, "w", encoding="utf-8") as f:
+                f.write(input_to_save)
+            if VERBOSE:
+                print(f"[{self.agent_id}] Input saved to: {input_filepath}")
 
         return filepath
 

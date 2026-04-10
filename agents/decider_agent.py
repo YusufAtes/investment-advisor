@@ -257,6 +257,11 @@ GENERATE YOUR REFINED OUTPUT NOW:
         if VERBOSE:
             print(f"[{self.agent_id}] Running self-iteration {iteration_num}/{self.self_iterations}...")
 
+        # Store each iteration's input for later saving
+        if not hasattr(self, "_iteration_inputs"):
+            self._iteration_inputs = []
+        self._iteration_inputs.append((iteration_num, iteration_prompt))
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -278,6 +283,8 @@ GENERATE YOUR REFINED OUTPUT NOW:
         discussion_outputs: dict[str, str],
         financial_pool_data: str,
     ) -> str:
+        # Reset iteration inputs for this run
+        self._iteration_inputs = []
         """
         Generate the final investment decision through self-iteration.
 
@@ -343,6 +350,21 @@ GENERATE YOUR REFINED OUTPUT NOW:
 
         if VERBOSE:
             print(f"[{self.agent_id}] Decision saved to: {filepath}")
+
+        # Save all iteration inputs alongside the output
+        iteration_inputs = getattr(self, "_iteration_inputs", [])
+        if iteration_inputs:
+            input_filename = "INPUT_" + filename
+            input_filepath = os.path.join(output_dir, input_filename)
+            with open(input_filepath, "w", encoding="utf-8") as f:
+                for iteration_num, iteration_prompt in iteration_inputs:
+                    f.write(f"{'=' * 80}\n")
+                    f.write(f"ITERATION {iteration_num} OF {self.self_iterations} — INPUT PROMPT\n")
+                    f.write(f"{'=' * 80}\n\n")
+                    f.write(iteration_prompt)
+                    f.write(f"\n\n")
+            if VERBOSE:
+                print(f"[{self.agent_id}] Iteration inputs saved to: {input_filepath}")
 
         return filepath
 
