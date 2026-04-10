@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import reportlab; print\\('reportlab available'\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python3 -c \"import reportlab; print\\('reportlab available'\\)\")",
+      "Bash(python3 -m pip install reportlab -q)",
+      "Bash(python3 -c \"import reportlab; print\\('ok'\\)\")",
+      "Bash(python -c \"import sys; print\\(sys.version\\); import reportlab; print\\('reportlab ok'\\)\")",
+      "Bash(python -m pip install reportlab -q)",
+      "Read(//c/investment advisor/**)",
+      "Bash(ls *.py)",
+      "Bash(command -v python.exe)",
+      "Read(//c/Users/yusuf/AppData/Roaming/**)",
+      "Bash(\"/c/Users/yusuf/AppData/Local/Microsoft/WindowsApps/python.exe\" -c \"import sys; print\\(sys.version\\)\")"
+    ]
+  }
+}

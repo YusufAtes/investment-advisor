@@ -262,6 +262,14 @@ GENERATE YOUR DISCUSSION OUTPUT NOW:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 
+        # Save the model input alongside the output
+        input_filename = "INPUT_" + filename
+        input_filepath = os.path.join(output_dir, input_filename)
+        input_to_save = getattr(self, "_last_input", "")
+        if input_to_save:
+            with open(input_filepath, "w", encoding="utf-8") as f:
+                f.write(input_to_save)
+
         return filepath
 
 
