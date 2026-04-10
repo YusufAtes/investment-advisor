@@ -79,10 +79,13 @@ EXECUTE YOUR RESEARCH TASK NOW.
 Instructions:
 1. Use web search to gather the MOST CURRENT information available.
 2. Focus on data, news, and developments from the past 7 days primarily.
-3. Cite all sources with URLs when possible.
-4. Generate your report following the OUTPUT TEMPLATE exactly.
-5. Use today's date ({current_date}) for the Report Date in metadata.
-6. Use the current timestamp ({timestamp}) for Generation Timestamp.
+3. CRITICAL SEARCH RULE: You MUST explicitly append the following site constraints to your Google searches to ensure Analyst-grade journalism:
+   - For Global/US News append: `site:investing.com OR site:cnbc.com OR site:finance.yahoo.com`
+   - For Turkish News append: `site:tr.investing.com OR site:tr.tradingview.com OR site:bloomberght.com`
+4. Cite all sources with URLs when possible.
+5. Generate your report following the OUTPUT TEMPLATE exactly.
+6. Use today's date ({current_date}) for the Report Date in metadata.
+7. Use the current timestamp ({timestamp}) for Generation Timestamp.
 
 BEGIN YOUR RESEARCH AND GENERATE THE REPORT:
 """

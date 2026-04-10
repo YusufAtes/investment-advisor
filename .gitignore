@@ -6,6 +6,7 @@ reports/
 
 # Portfolio data (contains personal financial information)
 portfolio/
+user_profile.txt
 
 # Tracking data (price history, evaluation logs, plots)
 tracking/price_history.txt

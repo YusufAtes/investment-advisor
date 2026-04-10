@@ -66,6 +66,16 @@ class DeciderAgent(BaseAgent):
             if VERBOSE:
                 print(f"[{self.agent_id}] WARNING: Portfolio file not found. Using prompt without portfolio data.")
 
+        # Inject User Profile
+        try:
+            user_profile = FileHandler().load_user_profile()
+            self.system_prompt = self.system_prompt.replace("{USER_PROFILE}", user_profile)
+            if VERBOSE:
+                print(f"[{self.agent_id}] User profile injected into system prompt.")
+        except Exception as e:
+            if VERBOSE:
+                print(f"[{self.agent_id}] WARNING: Could not inject user profile: {e}")
+
         # Load past decision reports for historical awareness
         self.past_reports = self._load_past_reports(PAST_REPORTS_COUNT)
 

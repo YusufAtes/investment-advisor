@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import VERBOSE
 from utils.file_handler import FileHandler
 from agents.inference_agent import InferenceAgent, run_interactive_session
+from utils.portfolio_loader import format_portfolio_for_prompt
 
 
 def load_final_reports(n: int = 3) -> list:
@@ -95,6 +96,16 @@ def main():
         default=None,
         help="Single question mode (non-interactive)"
     )
+    parser.add_argument(
+        "--deploy",
+        type=float,
+        help="Amount of cash (USD) to deploy into the portfolio"
+    )
+    parser.add_argument(
+        "--liquidate",
+        type=float,
+        help="Amount of cash (USD) to raise by liquidating assets"
+    )
     
     args = parser.parse_args()
     
@@ -109,10 +120,27 @@ def main():
     else:
         final_reports = load_final_reports(args.num_reports)
     
+    # Handle Action-Oriented inference modes
+    if args.deploy:
+        try:
+            portfolio_str = format_portfolio_for_prompt()
+            args.question = f"I want to deploy {args.deploy} USD into my portfolio. Here is my current portfolio and analytics:\n{portfolio_str}\n\nBased on your final reports and the analytics, tell me EXACTLY how many pieces of which current assets or new assets I should buy, and explain why. Prioritize underweight assets."
+        except Exception as e:
+            print(f"[Error] Could not load portfolio: {e}")
+            sys.exit(1)
+            
+    elif args.liquidate:
+        try:
+            portfolio_str = format_portfolio_for_prompt()
+            args.question = f"I need to liquidate assets to raise exactly {args.liquidate} USD in cash. Here is my current portfolio and analytics:\n{portfolio_str}\n\nBased on your final reports and the analytics, tell me EXACTLY how many pieces of which assets I should sell to minimize portfolio damage and balance overweight exposures. Give precise numbers."
+        except Exception as e:
+            print(f"[Error] Could not load portfolio: {e}")
+            sys.exit(1)
+
     # Single question mode
     if args.question:
-        print("\n[Mode] Single question mode")
-        print(f"\n[Question] {args.question}")
+        print("\n[Mode] Action/Single question mode")
+        print(f"\n[Question] {args.question[:200]}...")
         print("\n" + "-" * 70)
         print("Analyzing... (this may take a moment)")
         print("-" * 70 + "\n")

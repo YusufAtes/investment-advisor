@@ -91,6 +91,15 @@ class DiscussionAgent(BaseAgent):
             self.system_prompt = self.system_prompt.replace("{PORTFOLIO}", portfolio_text)
         except Exception:
             pass
+            
+        # Inject User Profile
+        try:
+            from utils.file_handler import FileHandler
+            user_profile = FileHandler().load_user_profile()
+            self.system_prompt = self.system_prompt.replace("{USER_PROFILE}", user_profile)
+        except Exception as e:
+            if VERBOSE:
+                print(f"[{self.agent_id}] WARNING: Could not inject user profile: {e}")
 
         # Generate and inject random investing style
         self.investing_style = generate_random_investing_style()
@@ -124,11 +133,14 @@ class DiscussionAgent(BaseAgent):
             input_sections.append(content)
             input_sections.append("\\n")
 
-        # Add financial pool data
+        # Add financial pool data (Sampled 30% for this agent)
+        from utils.data_formatter import truncate_and_sample_financial_pool
+        sampled_pool_data = truncate_and_sample_financial_pool(financial_pool_data, sample_ratio=0.3)
+        
         input_sections.append("\\n" + "=" * 60)
-        input_sections.append("YFINANCE FINANCIAL DATA POOL")
+        input_sections.append("YFINANCE FINANCIAL DATA POOL (RANDOM SAMPLE)")
         input_sections.append("=" * 60)
-        input_sections.append("\\n" + financial_pool_data + "\\n")
+        input_sections.append("\\n" + sampled_pool_data + "\\n")
 
         execution_prompt = f"""
 {self.system_prompt}
@@ -150,23 +162,88 @@ TASK
 Based ONLY on the inputs and your assigned investing style, generate your discussion output.
 - Follow the OUTPUT STRUCTURE exactly.
 - Set Generation Timestamp to: {timestamp}
+- VERY IMPORTANT: At the very beginning of your output, explicitly state your assigned Risk Appetite, Holding Period, and Aggression Level so the Decider Agent knows your exact stance.
 
 GENERATE YOUR DISCUSSION OUTPUT NOW:
 """
 
+        provider = "gemini"
+        from config import OPENAI_API_KEY, ANTHROPIC_API_KEY
+        if self.agent_index % 3 == 0 and OPENAI_API_KEY:
+            provider = "openai"
+        elif self.agent_index % 3 == 2 and ANTHROPIC_API_KEY:
+            provider = "anthropic"
+
+        if VERBOSE:
+            print(f"[{self.agent_id}] Routing request to provider: {provider.upper()}")
+
         try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=execution_prompt,
-                config=types.GenerateContentConfig(
-                    temperature=self.temperature,
-                    max_output_tokens=self.max_tokens,
+            if provider == "openai":
+                return self._call_openai(execution_prompt)
+            elif provider == "anthropic":
+                return self._call_anthropic(execution_prompt)
+            else:
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=execution_prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=self.temperature,
+                        max_output_tokens=self.max_tokens,
+                    )
                 )
-            )
-            return response.text
+                return response.text
         except Exception as e:
             print(f"[{self.agent_id}] Error generating discussion: {e}")
             raise
+
+    def _call_openai(self, prompt: str) -> str:
+        """Call OpenAI API using urllib."""
+        import urllib.request
+        import json
+        from config import OPENAI_API_KEY
+        
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OPENAI_API_KEY}"
+        }
+        data = {
+            "model": "gpt-4o",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens
+        }
+        
+        req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers)
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode("utf-8"))
+            return result["choices"][0]["message"]["content"]
+
+    def _call_anthropic(self, prompt: str) -> str:
+        """Call Anthropic API using urllib."""
+        import urllib.request
+        import json
+        from config import ANTHROPIC_API_KEY
+        
+        url = "https://api.anthropic.com/v1/messages"
+        headers = {
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json"
+        }
+        data = {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers)
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode("utf-8"))
+            return result["content"][0]["text"]
 
     def save_discussion(self, content: str, output_dir: Optional[str] = None) -> str:
         if output_dir is None:

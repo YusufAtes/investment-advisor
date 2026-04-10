@@ -17,6 +17,10 @@ load_dotenv()
 # Google Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "your-gemini-api-key")
 
+# Multi-LLM Support Keys
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
 # =============================================================================
 # EMAIL CONFIGURATION
 # =============================================================================

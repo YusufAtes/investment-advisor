@@ -125,6 +125,14 @@ def format_portfolio_for_prompt(portfolio: Optional[dict] = None, portfolio_file
     lines.append(total_row)
     lines.append("=" * 92)
 
+    # Inject Analyst-Grade Analytics
+    try:
+        from utils.portfolio_analytics import generate_analytics_report
+        analytics_text = generate_analytics_report(portfolio)
+        lines.append("\n" + analytics_text)
+    except Exception as e:
+        print(f"Error generating portfolio analytics: {e}")
+
     return "\n".join(lines)
 
 

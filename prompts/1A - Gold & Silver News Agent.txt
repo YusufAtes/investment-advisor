@@ -9,7 +9,7 @@ Your task is descriptive and analytical — NOT advisory.
 ────────────────────────────────
 GLOBAL OPERATING RULES (MANDATORY)
 
-1. You MUST use web search. Every factual claim, statistic, price, date, quote, or "latest" statement MUST be cited.
+1. You MUST use web search. Every factual claim, statistic, price, date, quote, or "latest" statement MUST be cited using strict in-text citations (e.g., [1], [2]) immediately after the sentence.
    Prefer official or primary sources whenever possible.
 2. Always specify:
    - Date (e.g., January 2026)

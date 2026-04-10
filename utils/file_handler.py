@@ -58,6 +58,19 @@ class FileHandler:
         if VERBOSE:
             print(f"[FileHandler] Directories initialized at: {self.base_dir}")
 
+    def load_user_profile(self) -> str:
+        """
+        Loads the user profile details from user_profile.txt.
+        
+        Returns:
+            Formatted string of the user profile, or a default string if it doesn't exist.
+        """
+        filepath = os.path.join(os.path.dirname(self.base_dir), "user_profile.txt")
+        content = self.read_file(filepath)
+        if content:
+            return f"\n--- USER PROFILE & CONSTRAINTS ---\n{content}\n----------------------------------\n"
+        return ""
+
     def read_file(self, filepath: str) -> Optional[str]:
         """
         Read content from a file.

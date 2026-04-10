@@ -5,7 +5,7 @@ Main entry point for running the complete investment advisory pipeline.
 
 Usage:
     python main.py                                    # Run with defaults
-    python main.py --discussion-iterations 5         # Custom discussion iterations
+    python main.py --discussion-agents 5             # Custom discussion agent count
     python main.py --decider-iterations 3            # Custom decider iterations
     python main.py --skip-email                      # Skip email delivery
     python main.py --research-only                   # Only run research agents
@@ -431,6 +431,57 @@ def run_decider_only(
     return decision_content is not None
 
 
+def setup_user_profile_if_missing():
+    """Interactive CLI flow to create user_profile.txt if it doesn't exist."""
+    import os
+    import json
+    from config import BASE_DIR, PORTFOLIO_FILE
+    
+    profile_path = os.path.join(BASE_DIR, "user_profile.txt")
+    
+    if not os.path.exists(profile_path):
+        print("\n" + "="*80)
+        print("WELCOME TO AI INVESTMENT ADVISOR - INITIAL SETUP")
+        print("="*80)
+        print("It looks like this is your first time running the advisor.")
+        print("Let's build your Investment Profile. The AI agents will use this ")
+        print("to hyper-personalize their fundamental analysis and advice for YOU.\n")
+        
+        questions = [
+            ("Goals", "What are your primary financial goals? (e.g., retirement, buying a home, wealth building)"),
+            ("Time Horizon", "How long do you plan to hold your investments before making major withdrawals? (e.g., 1-3 years, 5-10 years, 10+ years)"),
+            ("Risk Tolerance (Emotional)", "If your portfolio lost 20% of its value in a month due to a market crash, how would you react? (e.g., panic sell, hold and wait, buy more)"),
+            ("Risk Capacity (Financial)", "How would a significant reduction in your portfolio impact your daily life and financial security? (e.g., severe impact, minor annoyance, no impact)"),
+            ("Constraints", "Do you have any investing restrictions? (e.g., Halal only, no Israel exposure, ESG focus, None)"),
+            ("Knowledge/Edge", "Do you have specialized knowledge or work in a specific field? (e.g., 'I am a mechanical engineer in the tech sector', 'None')")
+        ]
+        
+        answers = []
+        for tag, question in questions:
+            print(f"\n{question}")
+            answer = input("> ")
+            answers.append(f"{tag}:\n{answer}\n")
+            
+        content = "\n".join(answers)
+        
+        try:
+            with open(profile_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            print("\n[OK] User profile saved to user_profile.txt successfully!")
+        except Exception as e:
+            print(f"\n[FAIL] Could not save user profile: {e}")
+            
+    if not os.path.exists(PORTFOLIO_FILE):
+        print(f"\n[INFO] Portfolio file not found at {PORTFOLIO_FILE}.")
+        print("[INFO] Creating an empty portfolio file to get you started.")
+        try:
+            os.makedirs(os.path.dirname(PORTFOLIO_FILE), exist_ok=True)
+            with open(PORTFOLIO_FILE, "w", encoding="utf-8") as f:
+                json.dump({}, f, indent=4)
+        except Exception as e:
+            print(f"[FAIL] Could not create empty portfolio: {e}")
+
+
 def main():
     """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(
@@ -439,12 +490,12 @@ def main():
         epilog="""
 Examples:
   python main.py                                    Run full pipeline with defaults
-  python main.py --discussion-iterations 5         Run with 5 discussion iterations
+  python main.py --discussion-agents 5             Run with 5 discussion agents
   python main.py --decider-iterations 4            Run with 4 decider self-iterations
   python main.py --skip-email                      Run without sending email
   python main.py --research-only                   Only run research agents
   python main.py --discussion-only                 Only run discussion agents
-  python main.py --decider-only --iteration 3     Only run decider (uses iteration 3 discussions)
+  python main.py --decider-only                    Only run decider (uses latest discussions)
         """
     )
 
@@ -504,6 +555,9 @@ Examples:
 
     # Run appropriate mode
     try:
+        # Run user onboarding if required profile/portfolio files are missing
+        setup_user_profile_if_missing()
+        
         if args.research_only:
             success = run_research_only()
         elif args.discussion_only:
